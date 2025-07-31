@@ -5,7 +5,7 @@ from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern
 from app.utils.qr_generator import generateQrCode
 from app.crud import intern
 from uuid import UUID
-
+#sample change
 import os
 
 router = APIRouter()
