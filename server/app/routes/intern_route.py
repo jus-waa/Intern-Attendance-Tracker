@@ -13,7 +13,7 @@ router = APIRouter()
 #http methods
 @router.post("/register")
 async def create(request:ReqIntern, session:Session=Depends(get_db)):
-    _intern = intern.registerIntern(session, intern=request.parameter)
+    _intern = intern.createIntern(session, intern=request.parameter)
     intern_uuid = _intern.intern_id
     request.parameter.qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
 
@@ -34,7 +34,7 @@ async def getAll(session:Session=Depends(get_db)):
                      result=_intern
                      ).model_dump(exclude_none=True)
 
-@router.get("/list/{id}")
+@router.get("/list/id:{id}")
 async def get(id:UUID, session:Session=Depends(get_db)):
     _intern = intern.getInternById(session, id)
     return ResIntern(code="200",

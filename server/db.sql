@@ -90,41 +90,15 @@ SELECT * FROM intern;
 
 DELETE FROM intern;
 /* ATTENDANCE */
-CREATE TABLE intern (
-	intern_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-	intern_name VARCHAR(255) NOT NULL,
-	school_name VARCHAR(255),
-	shift_name VARCHAR(255) NOT NULL,
-	time_in TIME,
-	time_out TIME,
-	total_hours INTERVAL,
-	time_remain INTERVAL,	
-	status VARCHAR(255) CHECK(status IN ('Active', 'Completed', 'Terminated')),
-	qr_code TEXT,
-	created_at TIMESTAMP DEFAULT current_timestamp,
-	updated_at TIMESTAMP DEFAULT current_timestamp
-);	
-
-SELECT gen_random_uuid();
-
-CREATE OR REPLACE FUNCTION updated_at()
-	returns TRIGGER AS $$
-BEGIN 
-	NEW.updated_at = current_timestamp;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql
-
-CREATE TRIGGER trigger_updated_at
-	BEFORE UPDATE
-	ON intern
-	FOR EACH ROW
-	EXECUTE PROCEDURE updated_at()
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-DROP TABLE intern;
-
-SELECT * FROM intern;
-
-DELETE FROM intern;
+CREATE TABLE attendance (
+    attendance_id GENERATED ALWAYS AS IDENTITY NOT NULL,
+    intern_id UUID,
+    attendance_date TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    time_in TIME,
+    time_out TIME,
+    total_hours INTERVAL,
+    check_in VARCHAR(255),
+    remarks VARCHAR(255),
+    PRIMARY KEY (attendance_id),
+    FOREIGN KEY(intern_id) REFERENCES intern (intern_id)
+)
