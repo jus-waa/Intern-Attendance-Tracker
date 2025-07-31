@@ -1,13 +1,14 @@
 from typing import Optional, Generic, TypeVar
-from datetime import time, timedelta, datetime
+from datetime import time, timedelta, date
 from pydantic import BaseModel, Field
+from uuid import UUID
 
 T = TypeVar('T')    
 
 class AttendanceSchema(BaseModel):
     attendance_id: Optional[int] = None
-    intern_id: Optional[int] = None
-    attendance_date: Optional[datetime] = None
+    intern_id: Optional[UUID] = None
+    attendance_date: Optional[date] = None
     time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None

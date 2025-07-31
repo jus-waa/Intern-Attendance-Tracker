@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from datetime import datetime, time, timedelta
+from datetime import date, time, timedelta
 from app.models.attendance_model import Attendance
 from app.schemas.attendance_schema import AttendanceSchema
-
+from uuid import UUID
 def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
     _attendance = session.query(Attendance).offset(skip).limit(limit).all()
     if not _attendance:
@@ -16,9 +16,10 @@ def getAttendanceById(session:Session, attendance_id: int):
         raise HTTPException(status_code=404, detail=f"Attendance with id:{attendance_id} not found.")
     return _attendance
 
-def registerAttendance(session:Session, attendance: AttendanceSchema):
+def registerAttendance(session:Session, attendance: AttendanceSchema, intern_id:UUID):
     _attendance = Attendance(
-        attendance_date=attendance.attendance_date,
+        intern_id=intern_id,
+        attendance_date=date.today(),
         time_in=attendance.time_in,
         time_out=attendance.time_out,
         total_hours=attendance.total_hours,
@@ -44,7 +45,7 @@ def removeAttendance(session:Session, attendance_id: int):
 
 def updateAttendance(session:Session, attendance_id: int, 
                     intern_id: int,
-                    attendance_date: datetime,
+                    attendance_date: date,
                     time_in: time,
                     time_out: time,
                     total_hours: timedelta,

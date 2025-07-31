@@ -8,12 +8,12 @@ from app.crud import attendance, intern
 router = APIRouter()
 
 @router.post("/register")
-async def registerAttendance(request:ReqAttendance, requestIntern:ReqIntern, intern_name:str, session:Session=Depends(get_db)):
-    _attendance = attendance.registerAttendance(session, attendance=request.parameter, intern_id=requestIntern.parameter.intern_id)
-    _intern_name = requestIntern.parameter.intern_name
+async def registerAttendance(request:ReqAttendance, session:Session=Depends(get_db)):
+    _attendance = attendance.registerAttendance(session, attendance=request.parameter, intern_id=request.parameter.intern_id)
+    _intern_id=request.parameter.intern_id
     return ResAttendance(code="201",
                          status="Created",
-                         message=f"Attendance by {_intern_name} successfully added.",
+                         message=f"Attendance by {_intern_id} successfully added.",
                          result=_attendance).model_dump(exclude_none=True)
 
 @router.post("/scan")
