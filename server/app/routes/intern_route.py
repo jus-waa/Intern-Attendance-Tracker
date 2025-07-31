@@ -5,7 +5,7 @@ from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern
 from app.utils.qr_generator import generateQrCode
 from app.crud import intern
 from uuid import UUID
-#sample change
+
 import os
 
 router = APIRouter()
@@ -16,7 +16,6 @@ async def create(request:ReqIntern, session:Session=Depends(get_db)):
     _intern = intern.createIntern(session, intern=request.parameter)
     intern_uuid = _intern.intern_id
     request.parameter.qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
-
     return ResIntern(code="201", 
                      status="Created", 
                      message="Intern added successfully.", 
