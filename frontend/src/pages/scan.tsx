@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode, type Html5QrcodeResult } from "html5-qrcode";
+import inputLogo from '../assets/input.png';
 
 const Scan: React.FC = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [scannedResult, setScannedResult] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualUID, setManualUID] = useState('');
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -80,15 +84,15 @@ const Scan: React.FC = () => {
       }
     }
 
-    // Automatically hide notification after 3 seconds and resume scanning
     setTimeout(() => {
       setScannedResult('');
       startScanning();
     }, 3000);
   };
 
-  const handleScanError = () => {
-    // silent
+  const handleScanError = (errorMessage: string) => {
+    console.warn("QR Scan Error (ignored):", errorMessage);
+    // No longer triggering modal automatically
   };
 
   const stopScanning = async () => {
@@ -127,31 +131,34 @@ const Scan: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4">
+    <div className="flex flex-col items-center min-h-screen p-4 relative">
       <div className="text-center mb-6">
         <p className="text-[#0D223D] text-2xl font-semibold mb-2">Scan Your QR Code</p>
         <p className="text-[#969696] text-xs font-[400]">Your attendance is automatically detected by the system</p>
       </div>
 
-      {!isScanning && !error && (
-        <div className="w-full max-w-md bg-gray-100 border-2 border-[#E0E0E0] rounded-lg mb-4 flex items-center justify-center text-gray-500" style={{ width: '400px', height: '300px' }}>
-          Initializing camera...
-        </div>
-      )}
+      {/* QR Reader Container */}
+      <div className="relative mb-4" style={{ width: '400px', height: '300px' }}>
+        <div id="reader" className="w-full h-full border rounded-md"></div>
 
-      <div
-        id="reader"
-        className="mb-4"
-        style={{ width: '400px', height: '300px' }}
-      ></div>
+        {/* Manual Entry Icon Button */}
+        <button
+          onClick={() => setShowManualModal(true)}
+          className="absolute top-2 right-2 p-1 bg-[#25E2CC] rounded-full shadow hover:bg-[#1eb5a3]"
+          title="Enter UID manually"
+        >
+          <img src={ inputLogo } className="w-5 h-5" />
+        </button>
+      </div>
 
+      {/* Error Alert */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 max-w-md">
           <p className="text-sm">{error}</p>
         </div>
       )}
 
-      {/* Notification Toast */}
+      {/* QR Scanned Toast Notification */}
       {scannedResult && (
         <div className="fixed bottom-6 right-6 z-50">
           <div className="bg-white border-l-4 border-[#25E2CC] shadow-xl rounded-lg p-4 w-80 animate-slide-in">
@@ -168,16 +175,64 @@ const Scan: React.FC = () => {
         </div>
       )}
 
+      {/* Manual UID Modal */}
+      {showManualModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h2 className="text-lg font-bold text-center mb-4">Enter UID Manually</h2>
+            <input
+              type="text"
+              placeholder="Enter UID"
+              value={manualUID}
+              onChange={(e) => setManualUID(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowManualModal(false);
+                  setManualUID('');
+                  startScanning();
+                }}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const now = new Date();
+                  console.log("Manual Entry UID:", manualUID);
+                  console.log("Date:", now.toLocaleDateString());
+                  console.log("Time:", now.toLocaleTimeString());
+
+                  setShowManualModal(false);
+                  setManualUID('');
+                  startScanning();
+                }}
+                className="bg-[#25E2CC] text-white px-4 py-2 rounded hover:bg-[#1eb5a3]"
+              >
+                Submit
+              </button>
+              
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Register CTA */}
       <div className="flex items-center mt-6 px-8 w-full max-w-md">
         <div className="flex-1 border-t border-gray-300"></div>
         <span className="px-4 text-gray-500 text-sm">Don't have a QR code?</span>
         <div className="flex-1 border-t border-gray-300"></div>
-      </div>   
+      </div>
 
       <div className="flex justify-center mt-4">
-        <button onClick={() => navigate('/interns') } className="bg-[#25E2CC] text-gray-50 px-8 py-3 rounded-lg font-bold hover:bg-[#1eb5a3] transition-colors duration-200">
+        <button
+          onClick={() => navigate('/interns', { state: { openModal: true } })}
+          className="bg-[#25E2CC] text-gray-50 px-8 py-3 rounded-lg font-bold hover:bg-[#1eb5a3] transition-colors duration-200"
+        >
           Register Now
-        </button>            
+        </button>
       </div>
     </div>
   );

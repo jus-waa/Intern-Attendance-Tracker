@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const Interns: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -6,12 +7,18 @@ const Interns: React.FC = () => {
     fullName: '',
     schoolName: '',
     schoolAbbreviation: '',
-    wdID: '',
     shift: '',
     timeIn: '',
     timeOut: '',
     totalHours: '',
   });
+
+  const location = useLocation();
+  useEffect(() => {
+  if (location.state?.openModal) {
+    setShowModal(true);
+  }
+}, [location.state]);
 
   const [dateCreated, setDateCreated] = useState<string>('');
  
@@ -65,7 +72,7 @@ const preventManualTimeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
       case 'Night Shift':
         return { min: '17:00', max: '20:00' };
       case 'Graveyard Shift':
-        return { min: '22:00', max: '23:59' };
+        return { min: '22:00', max: '24:00' };
       default:
         return { min: '', max: '' };
     }
@@ -100,13 +107,14 @@ const handleTimeInBlur = () => {
       fullName: '',
       schoolName: '',
       schoolAbbreviation: '',
-      wdID: '',
       shift: '',
       timeIn: '',
       timeOut: '',
       totalHours: '',
     });
   };
+
+  const { min: timeInMin, max: timeInMax } = getTimeInRange();
 
   return (
     <div>
@@ -155,16 +163,7 @@ const handleTimeInBlur = () => {
                 />
                 </div>
               </div>
-              <input
-                type="number"
-                name="workDayID"
-                placeholder="Work Day ID"
-                value={formData.wdID}
-                onChange={handleChange}
-                required
-                className="w-full border p-2 rounded"
-              />
-              
+                            
               <select
                 name="shift"
                 value={formData.shift}
@@ -188,11 +187,12 @@ const handleTimeInBlur = () => {
                     value={formData.timeIn}
                     onChange={handleChange}
                     onBlur={handleTimeInBlur}
-                    min={getTimeInRange().min}
-                    max={getTimeInRange().max}
+                    min={timeInMin}
+                    max={timeInMax}
                     required
                     className="w-full border p-2 rounded text-gray-900"
                     />
+
                 </div>
 
                 <div className="flex-1 text-gray-900">
