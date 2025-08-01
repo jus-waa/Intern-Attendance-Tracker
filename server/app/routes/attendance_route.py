@@ -1,16 +1,16 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from app.utils.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
-from app.schemas.attendance_schema import AttendanceSchema, ReqAttendance, ResAttendance 
+from app.schemas.attendance_schema import AttendanceSchema, ReqAttendance, ResAttendance, ReqClockIn
 from app.schemas.intern_schema import ReqIntern
 from app.crud import attendance, intern
 
 router = APIRouter()
 
 @router.post("/register")
-async def registerAttendance(request:ReqAttendance, session:Session=Depends(get_db)):
-    _attendance = attendance.registerAttendance(session, attendance=request.parameter, intern_id=request.parameter.intern_id)
-    _intern_id=request.parameter.intern_id
+async def registerAttendance(request:ReqClockIn, session:Session=Depends(get_db)):
+    _attendance = attendance.registerAttendance(session, intern_id=request.intern_id, time_in=request.time_in)
+    _intern_id=request.intern_id
     return ResAttendance(code="201",
                          status="Created",
                          message=f"Attendance by {_intern_id} successfully added.",
@@ -18,7 +18,6 @@ async def registerAttendance(request:ReqAttendance, session:Session=Depends(get_
 
 @router.post("/scan")
 async def scanQRAttendance():
-    
     pass
 
 @router.get("/timesheet/{school_name}")

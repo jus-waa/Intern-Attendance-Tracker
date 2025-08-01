@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from datetime import date, time, timedelta
 from app.models.attendance_model import Attendance
+from app.models.intern_model import Intern
 from app.schemas.attendance_schema import AttendanceSchema
 from uuid import UUID
 def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
@@ -16,15 +17,18 @@ def getAttendanceById(session:Session, attendance_id: int):
         raise HTTPException(status_code=404, detail=f"Attendance with id:{attendance_id} not found.")
     return _attendance
 
-def registerAttendance(session:Session, attendance: AttendanceSchema, intern_id:UUID):
+def registerAttendance(session:Session ,intern_id:UUID, time_in:time):
+    #validate if intern_id in attedance table is similar
+    _intern = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
+    if _intern:
+        raise HTTPException(status_code=400, detail="Attendance already exists for this time.")
+    if not _intern:
+        raise HTTPException(status_code=404, detail=f"Intern with id: {intern_id} not found.")
+
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        time_in=attendance.time_in,
-        time_out=attendance.time_out,
-        total_hours=attendance.total_hours,
-        check_in=attendance.check_in,
-        remarks=attendance.remarks
+        time_in=time_in,
     )
     session.add(_attendance)
     session.commit()

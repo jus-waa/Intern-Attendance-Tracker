@@ -7,9 +7,9 @@ T = TypeVar('T')
 
 class AttendanceSchema(BaseModel):
     attendance_id: Optional[int] = None
-    intern_id: Optional[UUID] = None
+    intern_id: UUID
     attendance_date: Optional[date] = None
-    time_in: Optional[time] = None
+    time_in: time
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
     check_in: Optional[str] = None
@@ -20,8 +20,18 @@ class AttendanceSchema(BaseModel):
 
 #used for inputting values
 class ReqAttendance(BaseModel):
-    parameter: AttendanceSchema = Field(...)
-    
+    attendance_id: int
+    intern_id: UUID
+    attendance_date: date
+    time_in: time
+    time_out: time
+    total_hours: timedelta
+    check_in: str
+    remarks: str
+        
+class ReqClockIn(BaseModel):
+    intern_id: UUID
+    time_in: time 
 #response for any type of data
 #similar to status.json in express
 class ResAttendance(BaseModel, Generic[T]):

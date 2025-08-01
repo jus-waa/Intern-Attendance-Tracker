@@ -25,7 +25,21 @@ class InternSchema(BaseModel):
 
 #used for inputting values
 class ReqIntern(BaseModel):
-    parameter: InternSchema = Field(...)
+    intern_id: Optional[UUID] = None
+    intern_name: Optional[str] = None
+    school_name: Optional[str] = None
+    shift_name: Optional[str] = None
+    time_in: Optional[time] = None
+    time_out: Optional[time] = None
+    total_hours: Optional[timedelta] = None
+    time_remain: Optional[timedelta] = None
+    status: Optional[str] = None
+    qr_code: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+        
+class ReqInternID(BaseModel):
+    intern_id: UUID
     
 #response for any type of data
 #similar to status.json in express

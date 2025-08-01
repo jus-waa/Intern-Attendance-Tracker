@@ -5,7 +5,7 @@ from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern
 from app.utils.qr_generator import generateQrCode
 from app.crud import intern
 from uuid import UUID
-
+#sample change
 import os
 
 router = APIRouter()
@@ -13,15 +13,16 @@ router = APIRouter()
 #http methods
 @router.post("/register")
 async def create(request:ReqIntern, session:Session=Depends(get_db)):
-    _intern = intern.createIntern(session, intern=request.parameter)
+    _intern = intern.createIntern(session, intern=request)
     intern_uuid = _intern.intern_id
-    request.parameter.qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
+    request.qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
+
     return ResIntern(code="201", 
                      status="Created", 
                      message="Intern added successfully.", 
                      result={
                         "uuid": str(intern_uuid),
-                        "qr_code_path": request.parameter.qr_code 
+                        "qr_code_path": request.qr_code 
                         }).model_dump(exclude_none=True)
 
 @router.get("/list")
@@ -55,18 +56,19 @@ async def removeIntern(request:ReqIntern, session:Session=Depends(get_db)):
 
 @router.patch("/update")
 async def update(request:ReqIntern, session:Session=Depends(get_db)):
-    _intern = intern.updateIntern(session, intern_id=request.parameter.intern_id,
-                                  intern_name=request.parameter.intern_name,
-                                  school_name=request.parameter.school_name,
-                                  shift_name=request.parameter.shift_name,
-                                  time_in=request.parameter.time_in,
-                                  time_out=request.parameter.time_out,
-                                  total_hours=request.parameter.total_hours,
-                                  time_remain=request.parameter.time_remain,
-                                  status=request.parameter.status,
-                                  qr_code=request.parameter.qr_code,
-                                  created_at=request.parameter.created_at,
-                                  updated_at=request.parameter.updated_at
+    _intern = intern.updateIntern(session,
+                                  intern_id=request.intern_id,
+                                  intern_name=request.intern_name,
+                                  school_name=request.school_name,
+                                  shift_name=request.shift_name,
+                                  time_in=request.time_in,
+                                  time_out=request.time_out,
+                                  total_hours=request.total_hours,
+                                  time_remain=request.time_remain,
+                                  status=request.status,
+                                  qr_code=request.qr_code,
+                                  created_at=request.created_at,
+                                  updated_at=request.updated_at
                                   )
     return ResIntern(code="200",
                      status="Updated",
