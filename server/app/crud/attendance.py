@@ -11,10 +11,10 @@ def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
         raise HTTPException(status_code=404, detail="No attendance found.")
     return _attendance
 
-def getAttendanceById(session:Session, attendance_id: int):
-    _attendance = session.query(Attendance).filter(Attendance.attendance_id == attendance_id).first()
+def getAttendanceById(session:Session, intern_id: UUID):
+    _attendance = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
     if not _attendance:
-        raise HTTPException(status_code=404, detail=f"Attendance with id:{attendance_id} not found.")
+        raise HTTPException(status_code=404, detail=f"Attendance with id:{intern_id} not found.")
     return _attendance
 
 def registerAttendance(session:Session ,intern_id:UUID, time_in:time):
@@ -22,8 +22,6 @@ def registerAttendance(session:Session ,intern_id:UUID, time_in:time):
     _intern = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
     if _intern:
         raise HTTPException(status_code=400, detail="Attendance already exists for this time.")
-    if not _intern:
-        raise HTTPException(status_code=404, detail=f"Intern with id: {intern_id} not found.")
 
     _attendance = Attendance(
         intern_id=intern_id,
@@ -47,20 +45,15 @@ def removeAttendance(session:Session, attendance_id: int):
         raise HTTPException(status_code=404, detail="Failed to delete attendance")
     return {"message": f"Attendance with id {attendance_id} deleted successfully."}
 
-def updateAttendance(session:Session, attendance_id: int, 
-                    intern_id: int,
-                    attendance_date: date,
-                    time_in: time,
+def updateAttendance(session:Session, 
+                    intern_id: UUID,
                     time_out: time,
                     total_hours: timedelta,
                     check_in: str,
                     remarks: str):
-    _attendance = getAttendanceById(session=session, attendance_id=attendance_id)
+    _attendance = getAttendanceById(session=session, intern_id=intern_id)
     
-    _attendance.attendance_id=attendance_id
     _attendance.intern_id=intern_id
-    _attendance.attendance_date=attendance_date
-    _attendance.time_in=time_in
     _attendance.time_out=time_out
     _attendance.total_hours=total_hours
     _attendance.check_in=check_in

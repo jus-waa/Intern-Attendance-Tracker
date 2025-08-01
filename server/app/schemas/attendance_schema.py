@@ -20,10 +20,10 @@ class AttendanceSchema(BaseModel):
 
 #used for inputting values
 class ReqAttendance(BaseModel):
-    attendance_id: int
+    attendance_id: Optional[int] = None
     intern_id: UUID
-    attendance_date: date
-    time_in: time
+    attendance_date: Optional[date] = None
+    time_in: Optional[time] = None
     time_out: time
     total_hours: timedelta
     check_in: str
@@ -32,6 +32,12 @@ class ReqAttendance(BaseModel):
 class ReqClockIn(BaseModel):
     intern_id: UUID
     time_in: time 
+    
+class ReqUpdateAttendance(BaseModel):
+    time_out: time
+    total_hours: timedelta
+    check_in: str
+    remarks: str
 #response for any type of data
 #similar to status.json in express
 class ResAttendance(BaseModel, Generic[T]):

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from app.utils.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
-from app.schemas.attendance_schema import AttendanceSchema, ReqAttendance, ResAttendance, ReqClockIn
+from app.schemas.attendance_schema import AttendanceSchema, ReqAttendance, ResAttendance, ReqClockIn, ReqUpdateAttendance
 from app.schemas.intern_schema import ReqIntern
 from app.crud import attendance, intern
 
@@ -21,19 +21,30 @@ async def scanQRAttendance():
     pass
 
 @router.get("/timesheet/{school_name}")
-async def displayTimesheet():
+async def getAllBySchool():
     pass
 
-@router.patch("/timesheet/edit/{id}")
-async def updateTimesheet():
-    pass
+@router.patch("/timesheet/edit")
+async def update(request:ReqAttendance, session:Session=Depends(get_db)):
+    _attendance = attendance.updateAttendance(session,
+                                              intern_id=request.intern_id,
+                                              time_out=request.time_out,
+                                              total_hours=request.total_hours,
+                                              check_in=request.check_in,
+                                              remarks=request.remarks
+                                              )
+    return ResAttendance(code="200",
+                         status="Updated",
+                         message="Attendance updated successfully.",
+                         result=_attendance
+                         ).model_dump(exclude_none=True)
 
 @router.delete("/timesheet/delete/{id}")
-async def deleteTimesheetById():
+async def deleteById():
     pass
 
 @router.get("/export")
-async def exportTimesheetBySchool():
+async def exportBySchool():
     pass
 
 

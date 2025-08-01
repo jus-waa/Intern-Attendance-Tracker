@@ -75,4 +75,3 @@ async def update(request:ReqIntern, session:Session=Depends(get_db)):
                      message="Intern Information updated successfully.",
                      result=_intern
                      ).model_dump(exclude_none=True)
-
