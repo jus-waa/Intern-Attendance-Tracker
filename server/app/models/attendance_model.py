@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Time, Date, Interval, ForeignKey, text, UUID
+from sqlalchemy.orm import relationship
 from app.utils.db import Base
 class Attendance(Base):
     __tablename__= "attendance"
@@ -11,6 +12,9 @@ class Attendance(Base):
     total_hours=Column(Interval)
     check_in=Column(String(255))
     remarks=Column(String(255))
+    
+    #defining relationship from intern_model
+    intern = relationship("Intern", back_populates="attendances")
     
 def __repr__(self):
     return f"<Attendance(attendance_id={self.attendance.id}, intern={self.attendance.name})"

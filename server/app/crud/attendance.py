@@ -11,10 +11,16 @@ def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
         raise HTTPException(status_code=404, detail="No attendance found.")
     return _attendance
 
-def getAttendanceById(session:Session, intern_id: UUID):
+def getAttendanceById(session:Session, intern_id: UUID, skip:int = 0, limit:int = 100):
     _attendance = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
     if not _attendance:
         raise HTTPException(status_code=404, detail=f"Attendance with id:{intern_id} not found.")
+    return _attendance
+
+def getBySchool(session:Session, school_name: str, skip:int = 0, limit:int = 100):
+    _attendance = session.query(Attendance).filter(Intern.school_name == school_name).all()
+    if not _attendance:
+        raise HTTPException(status_code=404, detail=f"Attendance with id:{school_name} not found.")
     return _attendance
 
 def registerAttendance(session:Session ,intern_id:UUID, time_in:time):

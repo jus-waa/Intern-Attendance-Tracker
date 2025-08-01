@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Time, TIMESTAMP, Interval, text
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from app.utils.db import Base
@@ -19,6 +20,8 @@ class Intern(Base):
     created_at=Column(TIMESTAMP(timezone=True), server_default=text('now()'))
     updated_at=Column(TIMESTAMP(timezone=True), server_default=text('now()')) 
 
+    #defining relationship to attendance_model
+    attendances =  relationship("Attendance", back_populates="intern")
 #used for debugging
 def __repr__(self):
     return f"<Intern(intern_id={self.intern.id}, intern_name={self.intern.name})>"

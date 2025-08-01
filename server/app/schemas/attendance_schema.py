@@ -18,6 +18,12 @@ class AttendanceSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class InternSchema(BaseModel):
+    school_name: str
+    
+    class Config:
+        from_attributes = True
+
 #used for inputting values
 class ReqAttendance(BaseModel):
     attendance_id: Optional[int] = None
@@ -28,6 +34,7 @@ class ReqAttendance(BaseModel):
     total_hours: timedelta
     check_in: str
     remarks: str
+    intern: InternSchema #allows access to fk intern (remember this)
         
 class ReqClockIn(BaseModel):
     intern_id: UUID

@@ -21,8 +21,13 @@ async def scanQRAttendance():
     pass
 
 @router.get("/timesheet/{school_name}")
-async def getAllBySchool():
-    pass
+async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
+    _attendance = attendance.getBySchool(session, school_name, 0, 100)
+    return ResAttendance(code="200",
+                         status="Ok",
+                         message=f"Intern from {school_name} fetched successfully.",
+                         result=_attendance
+                         ).model_dump(exclude_none=True)
 
 @router.patch("/timesheet/edit")
 async def update(request:ReqAttendance, session:Session=Depends(get_db)):
