@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.post("/register")
 async def registerAttendance(request:ReqClockIn, session:Session=Depends(get_db)):
-    _attendance = attendance.registerAttendance(session, intern_id=request.intern_id, time_in=request.time_in)
+    _attendance = attendance.registerAttendance(session, intern_id=request.intern_id)
     _intern_id=request.intern_id
     return ResAttendance(code="201",
                          status="Created",

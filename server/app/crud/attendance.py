@@ -23,7 +23,7 @@ def getBySchool(session:Session, school_name: str, skip:int = 0, limit:int = 100
         raise HTTPException(status_code=404, detail=f"Attendance with id:{school_name} not found.")
     return _attendance
 
-def registerAttendance(session:Session ,intern_id:UUID, time_in:time):
+def registerAttendance(session:Session ,intern_id:UUID):
     #validate if intern_id in attedance table is similar
     _intern = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
     if _intern:
@@ -32,7 +32,6 @@ def registerAttendance(session:Session ,intern_id:UUID, time_in:time):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        time_in=time_in,
     )
     session.add(_attendance)
     session.commit()

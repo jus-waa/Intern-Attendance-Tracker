@@ -38,7 +38,6 @@ class ReqAttendance(BaseModel):
         
 class ReqClockIn(BaseModel):
     intern_id: UUID
-    time_in: time 
     
 class ReqUpdateAttendance(BaseModel):
     time_out: time
