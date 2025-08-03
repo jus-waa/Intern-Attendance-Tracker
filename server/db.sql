@@ -45,8 +45,8 @@ INSERT INTO shift (shift_name) VALUES ('Night Shift');
 ALTER TABLE intern 
 ALTER COLUMN shift_id DROP NOT NULL;
 
-INSERT INTO intern (intern_name, time_in, time_out, time_remain, status, qr_code)
-VALUES ('Josh Lagrimas', '06:00:00', '17:00:00', '240 hours', 'Active', 'SampleQRCpde') RETURNING *;
+INSERT INTO intern (intern_name, time_in, time_out, time_remain, status)
+VALUES ('Josh Lagrimas', '06:00:00', '17:00:00', '240 hours', 'Active') RETURNING *;
 
 SELECT * FROM intern;
 /* LATEST SCRIPT */
@@ -61,7 +61,6 @@ CREATE TABLE intern (
 	total_hours INTERVAL,
 	time_remain INTERVAL,	
 	status VARCHAR(255) CHECK(status IN ('Active', 'Completed', 'Terminated')),
-	qr_code TEXT,
 	created_at TIMESTAMP DEFAULT current_timestamp,
 	updated_at TIMESTAMP DEFAULT current_timestamp
 );	
