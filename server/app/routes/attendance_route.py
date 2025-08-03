@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from app.utils.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
-from app.schemas.attendance_schema import AttendanceSchema, ReqAttendance, ResAttendance, ReqClockIn, ReqUpdateAttendance
+from app.schemas.attendance_schema import ResAttendance, ReqClockIn, ReqUpdateAttendance
 from app.schemas.intern_schema import ReqIntern
 from app.crud import attendance, intern
+from datetime import datetime
 
 router = APIRouter()
 
@@ -30,13 +31,12 @@ async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
                          ).model_dump(exclude_none=True)
 
 @router.patch("/timesheet/edit")
-async def update(request:ReqAttendance, session:Session=Depends(get_db)):
+async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
     _attendance = attendance.updateAttendance(session,
                                               intern_id=request.intern_id,
                                               time_out=request.time_out,
-                                              total_hours=request.total_hours,
                                               check_in=request.check_in,
-                                              remarks=request.remarks
+                                              remarks=request.remarks,
                                               )
     return ResAttendance(code="200",
                          status="Updated",

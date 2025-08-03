@@ -1,5 +1,5 @@
 from typing import Optional, Generic, TypeVar
-from datetime import time, timedelta, date
+from datetime import time, timedelta, date, datetime
 from pydantic import BaseModel, Field
 from uuid import UUID
 
@@ -14,6 +14,7 @@ class AttendanceSchema(BaseModel):
     total_hours: Optional[timedelta] = None
     check_in: Optional[str] = None
     remarks: Optional[str] = None
+    updated_at: Optional[time] = None
     
     class Config:
         from_attributes = True
@@ -24,24 +25,12 @@ class InternSchema(BaseModel):
     class Config:
         from_attributes = True
 
-#used for inputting values
-class ReqAttendance(BaseModel):
-    attendance_id: Optional[int] = None
-    intern_id: UUID
-    attendance_date: Optional[date] = None
-    time_in: Optional[time] = None
-    time_out: time
-    total_hours: timedelta
-    check_in: str
-    remarks: str
-    intern: InternSchema #allows access to fk intern (remember this)
-        
 class ReqClockIn(BaseModel):
     intern_id: UUID
-    
+
 class ReqUpdateAttendance(BaseModel):
-    time_out: time
-    total_hours: timedelta
+    intern_id: UUID
+    time_out: datetime
     check_in: str
     remarks: str
 #response for any type of data

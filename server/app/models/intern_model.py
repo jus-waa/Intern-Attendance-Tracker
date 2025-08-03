@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Time, TIMESTAMP, Interval, text
+from sqlalchemy import Column, Integer, String, Time, TIMESTAMP, Interval, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid

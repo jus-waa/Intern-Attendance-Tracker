@@ -55,7 +55,8 @@ def removeIntern(session:Session, intern_id: int):
         raise HTTPException(status_code=404, detail="Failed to delete Intern. ")
     return {"message": f"Intern with id {intern_id} deleted successfully."}
 
-def updateIntern(session:Session, intern_id: UUID,
+def updateIntern(session:Session,
+                intern_id: UUID,
                 intern_name: str, 
                 school_name: str, 
                 shift_name: str, 
