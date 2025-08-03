@@ -91,12 +91,17 @@ SELECT * FROM intern;
 DELETE FROM intern;
 /* ATTENDANCE */
 CREATE TABLE attendance (
-	attendance_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+	attendance_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	intern_id UUID REFERENCES intern(intern_id) ON DELETE CASCADE,
 	attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	time_in TIME,
 	time_out TIME,
 	total_hours INTERVAL, /*within the day*/	
 	check_in VARCHAR(255) CHECK(check_in IN ('Regular Hours', 'Late', 'Absent', 'Holiday', 'Early In', 'Early Out', 'Off Set', 'Overtime')),
-	remarks VARCHAR(255)
+	remarks VARCHAR(255),
+	updated_at TIMESTAMP DEFAULT current_timestamp
 );	
+
+DROP TABLE attendance;
+
+SELECT * FROM attendance;

@@ -58,7 +58,9 @@ def updateAttendance(session:Session,
                     remarks: str):
     _attendance = getAttendanceById(session=session, intern_id=intern_id)
     
-    _attendance.intern_id=intern_id
+    if not _attendance:
+        raise HTTPException(status_code=404, detail="Attendance record not found")
+
     _attendance.time_out=time_out
     _attendance.total_hours=total_hours
     _attendance.check_in=check_in
@@ -67,8 +69,7 @@ def updateAttendance(session:Session,
     session.commit()
     session.refresh(_attendance)
     
-    if not _attendance:
-        raise HTTPException(status_code=404, detail="Update attendance failed")
+
     return _attendance
     
     
