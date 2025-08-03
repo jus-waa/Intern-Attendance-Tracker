@@ -16,7 +16,6 @@ class Intern(Base):
     total_hours=Column(Interval)
     time_remain=Column(Interval)
     status=Column(String(255))
-    qr_code=Column(Text)
     created_at=Column(TIMESTAMP(timezone=True), server_default=text('now()'))
     updated_at=Column(TIMESTAMP(timezone=True), server_default=text('now()')) 
 

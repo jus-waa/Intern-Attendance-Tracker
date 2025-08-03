@@ -15,14 +15,14 @@ router = APIRouter()
 async def create(request:ReqIntern, session:Session=Depends(get_db)):
     _intern = intern.createIntern(session, intern=request)
     intern_uuid = _intern.intern_id
-    request.qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
+    qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
 
     return ResIntern(code="201", 
                      status="Created", 
                      message="Intern added successfully.", 
-                     result={
+                     result={ 
                         "uuid": str(intern_uuid),
-                        "qr_code_path": request.qr_code 
+                        "qr_code_path": qr_code 
                         }).model_dump(exclude_none=True)
 
 @router.get("/list")
@@ -45,9 +45,9 @@ async def get(id:UUID, session:Session=Depends(get_db)):
 
 @router.delete("/remove")
 async def removeIntern(request:ReqIntern, session:Session=Depends(get_db)):
-    path = f"qrcodes/{request.parameter.intern_id}.png"
+    path = f"qrcodes/{request.intern_id}.png"
     os.remove(path)
-    _intern = intern.removeIntern(session, intern_id=request.parameter.intern_id)
+    _intern = intern.removeIntern(session, intern_id=request.intern_id)
     return ResIntern(code="200",
                      status="Ok",
                      message="Intern Information removed successfully.",
@@ -66,9 +66,6 @@ async def update(request:ReqIntern, session:Session=Depends(get_db)):
                                   total_hours=request.total_hours,
                                   time_remain=request.time_remain,
                                   status=request.status,
-                                  qr_code=request.qr_code,
-                                  created_at=request.created_at,
-                                  updated_at=request.updated_at
                                   )
     return ResIntern(code="200",
                      status="Updated",

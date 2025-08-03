@@ -35,7 +35,6 @@ def createIntern(session:Session, intern: InternSchema):
         time_out=intern.time_out,
         total_hours=intern.total_hours,
         status=intern.status,
-        qr_code=intern.qr_code,
         created_at=datetime.now(),
         updated_at=datetime.now()
         )
@@ -65,9 +64,7 @@ def updateIntern(session:Session, intern_id: UUID,
                 total_hours: timedelta, 
                 time_remain: timedelta, 
                 status: str, 
-                qr_code: str, 
-                created_at: datetime, 
-                updated_at: datetime):
+                ):
     _intern = getInternById(session=session, intern_id=intern_id)
     
     _intern.intern_name=intern_name
@@ -78,9 +75,7 @@ def updateIntern(session:Session, intern_id: UUID,
     _intern.total_hours=total_hours
     _intern.time_remain=time_remain
     _intern.status=status
-    _intern.qr_code=qr_code
-    _intern.created_at=created_at
-    _intern.updated_at=updated_at
+    _intern.updated_at=datetime.now()
     
     session.commit()
     session.refresh(_intern)
