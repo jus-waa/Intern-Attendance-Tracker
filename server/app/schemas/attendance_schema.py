@@ -30,7 +30,7 @@ class ReqClockIn(BaseModel):
 
 class ReqUpdateAttendance(BaseModel):
     intern_id: UUID
-    time_out: datetime
+    time_out: time
     check_in: str
     remarks: str
 #response for any type of data

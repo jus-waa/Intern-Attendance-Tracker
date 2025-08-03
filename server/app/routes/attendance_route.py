@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from app.schemas.attendance_schema import ResAttendance, ReqClockIn, ReqUpdateAttendance
 from app.schemas.intern_schema import ReqIntern
 from app.crud import attendance, intern
-from datetime import datetime
+from datetime import date, datetime, timedelta
+from app.models.attendance_model import Attendance
+
 
 router = APIRouter()
 
@@ -32,12 +34,30 @@ async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
 
 @router.patch("/timesheet/edit")
 async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
+
+    #get exisitng record
+    existing_attendance = session.query(Attendance).filter(
+        Attendance.intern_id == request.intern_id,
+        Attendance.attendance_date == date.today()
+    ).first()
+    
+    #get existing time in
+    #time_in_datetime = existing_attendance.time_in
+    #for test purposes
+    time_in_datetime = datetime.fromisoformat('2025-08-03T23:45:35.599136')
+    #get time out 
+    time_out_datetime = datetime.combine(date.today(), request.time_out)
+    #calculate total hours
+    total_hours = time_out_datetime - time_in_datetime
+
+
     _attendance = attendance.updateAttendance(session,
-                                              intern_id=request.intern_id,
-                                              time_out=request.time_out,
-                                              check_in=request.check_in,
-                                              remarks=request.remarks,
-                                              )
+                                            intern_id=request.intern_id,
+                                            time_out=time_out_datetime, 
+                                            check_in=request.check_in,
+                                            remarks=request.remarks,
+                                            total_hours=total_hours
+                                            )
     return ResAttendance(code="200",
                          status="Updated",
                          message="Attendance updated successfully.",

@@ -58,7 +58,8 @@ def updateAttendance(session:Session,
                     intern_id: UUID,
                     time_out: time,
                     check_in: str,
-                    remarks: str
+                    remarks: str,
+                    total_hours: timedelta
                     ):
     
     _attendance = getAttendanceById(session=session, intern_id=intern_id)
@@ -66,6 +67,7 @@ def updateAttendance(session:Session,
     _attendance.time_out=time_out
     _attendance.check_in=check_in
     _attendance.remarks=remarks
+    _attendance.total_hours=total_hours
 
     session.commit()
     session.refresh(_attendance)
