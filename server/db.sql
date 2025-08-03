@@ -83,24 +83,28 @@ CREATE TRIGGER trigger_updated_at
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-DROP TABLE intern;
-
 SELECT * FROM intern;
 
 DELETE FROM intern;
+
+DROP TABLE intern;
+
+
 /* ATTENDANCE */
 CREATE TABLE attendance (
 	attendance_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	intern_id UUID REFERENCES intern(intern_id) ON DELETE CASCADE,
 	attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	time_in TIME,
-	time_out TIME,
+	time_in TIMESTAMP,
+	time_out TIMESTAMP,
 	total_hours INTERVAL, /*within the day*/	
 	check_in VARCHAR(255) CHECK(check_in IN ('Regular Hours', 'Late', 'Absent', 'Holiday', 'Early In', 'Early Out', 'Off Set', 'Overtime')),
 	remarks VARCHAR(255),
 	updated_at TIMESTAMP DEFAULT current_timestamp
 );	
 
-DROP TABLE attendance;
+DELETE FROM attendance;
 
 SELECT * FROM attendance;
+
+DROP TABLE attendance;
