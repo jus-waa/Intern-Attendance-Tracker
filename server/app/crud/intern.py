@@ -6,7 +6,7 @@ from app.schemas.intern_schema import InternSchema
 from datetime import datetime, time, timedelta
 from uuid import UUID
 
-#in get all, use the built in pagination (skip, limit, offset)
+#in get all, use the built in pagination (skip, limit, offset)s
 def getAllIntern(session:Session, skip:int = 0, limit:int = 100):
     interns = session.query(Intern).offset(skip).limit(limit).all()
     if not interns:
