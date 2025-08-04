@@ -40,6 +40,7 @@ async def getAll(session:Session=Depends(get_db)):
 @router.get("/list/id:{id}")
 async def get(id:UUID, session:Session=Depends(get_db)):
     _intern = intern.getInternById(session, id)
+    _intern = convert_total_hours_to_float(_intern)
     return ResIntern(code="200",
                      status="Ok",
                      message="Intern id:{id} fetched successfully.",

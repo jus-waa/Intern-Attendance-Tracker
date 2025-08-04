@@ -1,5 +1,5 @@
 from datetime import datetime, time
-
+#check status
 def checkStatus(actualTime: time, time_in: time) -> str:
     if actualTime < time(8, 0, 0):
         return "Early in"
@@ -7,7 +7,7 @@ def checkStatus(actualTime: time, time_in: time) -> str:
         return "Early out"
     elif actualTime > time (5, 0, 0):
         return "Late"
-    
+#secs to hours
 def convert_total_hours_to_float(records):
     for record in records:
         if record.total_hours is not None:
