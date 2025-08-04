@@ -5,6 +5,8 @@ from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern
 from app.utils.qr_generator import generateQrCode
 from app.crud import intern
 from uuid import UUID
+from app.utils.helper import convert_total_hours_to_float
+
 #sample change
 import os
 
@@ -28,6 +30,7 @@ async def create(request:ReqIntern, session:Session=Depends(get_db)):
 @router.get("/list")
 async def getAll(session:Session=Depends(get_db)):
     _intern = intern.getAllIntern(session, 0, 100)
+    _intern = convert_total_hours_to_float(_intern)
     return ResIntern(code="200",
                      status="Ok",
                      message="Intern information fetched successfully.",

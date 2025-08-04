@@ -5,11 +5,14 @@ from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
 from app.schemas.attendance_schema import ReqUpdateAttendance
 from uuid import UUID
+
 def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
-    _attendance = session.query(Attendance).offset(skip).limit(limit).all()
-    if not _attendance:
+    attendances = session.query(Attendance).offset(skip).limit(limit).all()
+    
+    if not attendances:
         raise HTTPException(status_code=404, detail="No attendance found.")
-    return _attendance
+
+    return attendances
 
 def getAttendanceById(session:Session, intern_id: UUID, skip:int = 0, limit:int = 100):
     _attendance = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
@@ -31,7 +34,7 @@ def registerAttendance(session:Session ,intern_id:UUID):
         ).first()
     if _intern:
         raise HTTPException(status_code=400, detail="Attendance already exists for this time.")
-
+    
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
@@ -40,9 +43,10 @@ def registerAttendance(session:Session ,intern_id:UUID):
     session.add(_attendance)
     session.commit()
     session.refresh(_attendance)
-    
+
     if not _attendance:
         raise HTTPException(status_code=404, detail="")
+    
     return _attendance
 
 def removeAttendance(session:Session, intern_id: int):

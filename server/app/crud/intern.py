@@ -8,11 +8,12 @@ from uuid import UUID
 
 #in get all, use the built in pagination (skip, limit, offset)
 def getAllIntern(session:Session, skip:int = 0, limit:int = 100):
-    _intern = session.query(Intern).offset(skip).limit(limit).all()
-    if not _intern:
+    interns = session.query(Intern).offset(skip).limit(limit).all()
+    if not interns:
         raise HTTPException(status_code=404, detail="No Interns found. ")
-    return _intern
-    
+
+    return interns
+
 def getInternById(session:Session, intern_id: UUID):
     _intern = session.query(Intern).filter(Intern.intern_id == intern_id).first()
     if not _intern:
