@@ -1,10 +1,12 @@
 # Project Setup
-###Install the following:
+### Install the following:
 - Python
 - Postgresql
 - VSCode
 - Postman
 - DBeaver
   
-###Clone folder 
+### Clone folder 
+'''
 git clone <project link>
+'''
