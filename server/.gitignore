@@ -1,0 +1,18 @@
+# Virtual Environment
+venv/
+fastapi-env/
+
+# Bytecode
+__pycache__/
+*.py[cod]
+
+# Environemnt Variables
+.env
+qrcodes/
+# VSCode or IDE settings
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
