@@ -22,5 +22,5 @@ Use PosgreSQL
 Setup your own DB
 Paste scripts from db.sql starting from /*LATEST*/
 
-Note: for contributors do not commit on main
+**Note: for contributors do not commit on main**
 
