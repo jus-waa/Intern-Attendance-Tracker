@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from app.models.attendance_model import Attendance
 
 
-router = APIRouter()
+router = APIRouter(prefix="/attendance")
 
 @router.post("/register")
 async def registerAttendance(request:ReqClockIn, session:Session=Depends(get_db)):
