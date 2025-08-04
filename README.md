@@ -7,6 +7,6 @@
 - DBeaver
   
 ### Clone folder 
-'''
+```
 git clone <project link>
-'''
+```
