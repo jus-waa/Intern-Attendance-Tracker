@@ -22,3 +22,5 @@ def get_db():
         yield db
     finally: 
         db.close()
+
+print("Database connection established with URL:", DB_URL)

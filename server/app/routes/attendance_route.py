@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path, Depends
+from fastapi import APIRouter, HTTPException, Path, Depends, Body
 from app.utils.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
 from app.schemas.attendance_schema import ResAttendance, ReqClockIn, ReqUpdateAttendance, AttendanceSchema
@@ -20,8 +20,26 @@ async def registerAttendance(request:ReqClockIn, session:Session=Depends(get_db)
                          result=_attendance).model_dump(exclude_none=True)
 
 @router.post("/scan")
-async def scanQRAttendance():
-    pass
+async def scanQRAttendance(request: ReqClockIn = Body(...), session: Session = Depends(get_db)):
+    try:
+        _attendance = attendance.scanQRAttendance(session, request.intern_id, request.qr_code)
+        return ResAttendance(
+            code="200",
+            status="Success",
+            message=f"Attendance for intern {request.intern_id} scanned successfully.",
+            result= _attendance
+        ).model_dump(exclude_none=True)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to register attendance: {str(e)}")
+
+@router.get("/timesheet/{school_name}")
+async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
+    _attendance = attendance.getBySchool(session, school_name, 0, 100)
+    return ResAttendance(code="200",
+                         status="Ok",
+                         message=f"Intern from {school_name} fetched successfully.",
+                         result=_attendance
+                         ).model_dump(exclude_none=True)
 
 @router.get("/timesheet/{school_name}")
 async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
