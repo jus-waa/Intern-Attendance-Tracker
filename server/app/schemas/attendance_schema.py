@@ -9,7 +9,7 @@ class AttendanceSchema(BaseModel):
     attendance_id: Optional[int] = None
     intern_id: UUID
     attendance_date: Optional[date] = None
-    time_in: time
+    time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
     check_in: Optional[str] = None

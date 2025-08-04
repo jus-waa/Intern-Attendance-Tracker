@@ -43,7 +43,7 @@ async def get(id:UUID, session:Session=Depends(get_db)):
                      result=_intern
                      ).model_dump(exclude_none=True)
 
-@router.delete("/remove")
+@router.delete("/delete")
 async def removeIntern(request:ReqIntern, session:Session=Depends(get_db)):
     path = f"qrcodes/{request.intern_id}.png"
     os.remove(path)

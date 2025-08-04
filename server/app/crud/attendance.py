@@ -45,14 +45,14 @@ def registerAttendance(session:Session ,intern_id:UUID):
         raise HTTPException(status_code=404, detail="")
     return _attendance
 
-def removeAttendance(session:Session, attendance_id: int):
-    _attendance = getAttendanceById(session=session, attendance_id=attendance_id)
+def removeAttendance(session:Session, intern_id: int):
+    _attendance = getAttendanceById(session=session, intern_id=intern_id)
     session.delete(_attendance)
     session.commit()
     
     if not _attendance:
         raise HTTPException(status_code=404, detail="Failed to delete attendance")
-    return {"message": f"Attendance with id {attendance_id} deleted successfully."}
+    return {"message": f"Attendance with intern ID: {intern_id} deleted successfully."}
 
 def updateAttendance(session:Session, 
                     intern_id: UUID,

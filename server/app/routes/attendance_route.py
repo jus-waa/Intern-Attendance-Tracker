@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from app.utils.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
-from app.schemas.attendance_schema import ResAttendance, ReqClockIn, ReqUpdateAttendance
+from app.schemas.attendance_schema import ResAttendance, ReqClockIn, ReqUpdateAttendance, AttendanceSchema
 from app.schemas.intern_schema import ReqIntern
 from app.crud import attendance, intern
 from datetime import date, datetime, timedelta
@@ -35,21 +35,20 @@ async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
 @router.patch("/timesheet/edit")
 async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
 
-    #get exisitng record
+    #get existing record
     existing_attendance = session.query(Attendance).filter(
         Attendance.intern_id == request.intern_id,
-        Attendance.attendance_date == date.today()
+        Attendance.attendance_date == date.today()  
     ).first()
     
     #get existing time in
-    #time_in_datetime = existing_attendance.time_in
+    time_in_datetime = existing_attendance.time_in
     #for test purposes
-    time_in_datetime = datetime.fromisoformat('2025-08-03T23:45:35.599136')
+    #time_in_datetime = datetime.fromisoformat('2025-08-03T23:45:35.599136')
     #get time out 
     time_out_datetime = datetime.combine(date.today(), request.time_out)
     #calculate total hours
     total_hours = time_out_datetime - time_in_datetime
-
 
     _attendance = attendance.updateAttendance(session,
                                             intern_id=request.intern_id,
@@ -64,13 +63,15 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
                          result=_attendance
                          ).model_dump(exclude_none=True)
 
-@router.delete("/timesheet/delete/{id}")
-async def deleteById():
-    pass
+@router.delete("/timesheet/delete")
+async def deleteById(request: AttendanceSchema, session: Session=Depends(get_db)):
+    _attendance = attendance.removeAttendance(session, intern_id=request.intern_id)
+    return ResAttendance(code="200",
+                     status="Ok",
+                     message="Intern Information removed successfully.",
+                     result=_attendance
+                     ).model_dump(exclude_none=True)
 
-@router.get("/export")
-async def exportBySchool():
-    pass
 
 
 
