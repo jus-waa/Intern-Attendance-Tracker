@@ -1,4 +1,5 @@
 #basically "crud" for intern 
+from sqlalchemy import func
 from sqlalchemy.orm import Session 
 from fastapi import HTTPException
 from app.models.intern_model import Intern
@@ -11,7 +12,6 @@ def getAllIntern(session:Session, skip:int = 0, limit:int = 100):
     interns = session.query(Intern).offset(skip).limit(limit).all()
     if not interns:
         raise HTTPException(status_code=404, detail="No Interns found. ")
-
     return interns
 
 def getInternById(session:Session, intern_id: UUID):
@@ -28,6 +28,14 @@ def getInternBySchool(session:Session, school_name: str):
         
 #when creating, use the schema  
 def createIntern(session:Session, intern: InternSchema):
+    validateIntern = session.query(Intern).filter(
+        func.lower(Intern.intern_name) == intern.intern_name.lower(),
+        func.lower(Intern.school_name) == intern.school_name.lower()
+    ).first()
+    
+    if validateIntern:
+        raise HTTPException(status_code=400, detail="Intern already exists.")
+    
     _intern = Intern(
         intern_name=intern.intern_name,
         school_name=intern.school_name,
@@ -39,6 +47,7 @@ def createIntern(session:Session, intern: InternSchema):
         created_at=datetime.now(),
         updated_at=datetime.now()
         )
+    
     session.add(_intern)
     session.commit()
     session.refresh(_intern)
