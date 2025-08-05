@@ -1,9 +1,10 @@
 #basically "crud" for intern 
+from sqlalchemy import func
 from sqlalchemy.orm import Session 
 from fastapi import HTTPException
 from app.models.intern_model import Intern
 from app.schemas.intern_schema import InternSchema
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, date
 from uuid import UUID
 
 #in get all, use the built in pagination (skip, limit, offset)s
@@ -11,7 +12,6 @@ def getAllIntern(session:Session, skip:int = 0, limit:int = 100):
     interns = session.query(Intern).offset(skip).limit(limit).all()
     if not interns:
         raise HTTPException(status_code=404, detail="No Interns found. ")
-
     return interns
 
 def getInternById(session:Session, intern_id: UUID):
@@ -28,10 +28,20 @@ def getInternBySchool(session:Session, school_name: str):
         
 #when creating, use the schema  
 def createIntern(session:Session, intern: InternSchema):
+    validateIntern = session.query(Intern).filter(
+        func.lower(Intern.intern_name) == intern.intern_name.lower(),
+        func.lower(Intern.school_name) == intern.school_name.lower()
+    ).first()
+    
+    if validateIntern:
+        raise HTTPException(status_code=400, detail="Intern already exists.")
+    
     _intern = Intern(
         intern_name=intern.intern_name,
         school_name=intern.school_name,
         shift_name=intern.shift_name,
+        start_date=intern.start_date,
+        end_date=intern.end_date,
         time_in=intern.time_in,
         time_out=intern.time_out,
         total_hours=intern.total_hours,
@@ -39,6 +49,7 @@ def createIntern(session:Session, intern: InternSchema):
         created_at=datetime.now(),
         updated_at=datetime.now()
         )
+    
     session.add(_intern)
     session.commit()
     session.refresh(_intern)
@@ -61,10 +72,12 @@ def updateIntern(session:Session,
                 intern_name: str, 
                 school_name: str, 
                 shift_name: str, 
+                start_date: date,
+                end_date: date,
                 time_in: time, 
                 time_out: time, 
                 total_hours: timedelta, 
-                time_remain: timedelta, 
+                time_remain: int, 
                 status: str, 
                 ):
     _intern = getInternById(session=session, intern_id=intern_id)
@@ -72,6 +85,8 @@ def updateIntern(session:Session,
     _intern.intern_name=intern_name
     _intern.school_name=school_name
     _intern.shift_name=shift_name
+    _intern.start_date=start_date
+    _intern.end_date=end_date
     _intern.time_in=time_in
     _intern.time_out=time_out
     _intern.total_hours=total_hours

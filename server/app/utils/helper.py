@@ -13,3 +13,8 @@ def convert_total_hours_to_float(records):
         if record.total_hours is not None:
             record.total_hours = round(record.total_hours.total_seconds() / 3600, 2)
     return records
+
+def convert_total_hours_single(records):
+    if records.total_hours is not None:
+            records.total_hours = round(records.total_hours.total_seconds() / 3600, 2)
+    return records
