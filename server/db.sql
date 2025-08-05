@@ -50,6 +50,7 @@ VALUES ('Josh Lagrimas', '06:00:00', '17:00:00', '240 hours', 'Active') RETURNIN
 
 SELECT * FROM intern;
 /* LATEST SCRIPT */
+
 /* INTERN */
 CREATE TABLE intern (
 	intern_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -88,7 +89,6 @@ SELECT * FROM intern;
 DELETE FROM intern;
 
 DROP TABLE intern;
-
 
 /* ATTENDANCE */
 CREATE TABLE attendance (
