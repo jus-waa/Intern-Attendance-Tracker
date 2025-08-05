@@ -30,7 +30,7 @@ class ReqInternID(BaseModel):
 
 class ReqUpdateAttendance(BaseModel):
     intern_id: UUID
-    time_out: time
+    time_out: Optional[time] = None
     check_in: str
     remarks: str
 #response for any type of data

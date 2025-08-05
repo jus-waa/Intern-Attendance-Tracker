@@ -77,7 +77,7 @@ def updateIntern(session:Session,
                 time_in: time, 
                 time_out: time, 
                 total_hours: timedelta, 
-                time_remain: timedelta, 
+                time_remain: int, 
                 status: str, 
                 ):
     _intern = getInternById(session=session, intern_id=intern_id)

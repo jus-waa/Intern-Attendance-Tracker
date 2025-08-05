@@ -16,7 +16,7 @@ class Intern(Base):
     time_in=Column(Time)
     time_out=Column(Time)
     total_hours=Column(Interval)
-    time_remain=Column(Interval)
+    time_remain=Column(Integer)
     status=Column(String(255))
     created_at=Column(TIMESTAMP(timezone=True), server_default=text('now()'))
     updated_at=Column(TIMESTAMP(timezone=True), server_default=text('now()')) 

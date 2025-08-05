@@ -5,6 +5,7 @@ from datetime import date, time, timedelta, datetime
 from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
 from app.schemas.attendance_schema import ReqUpdateAttendance
+from app.utils.helper import convert_total_hours_to_float
 from uuid import UUID
 
 def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
@@ -15,7 +16,7 @@ def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
 
     return attendances
 
-def getAttendanceById(session:Session, intern_id: UUID, skip:int = 0, limit:int = 100):
+def getAttendanceById(session:Session, intern_id: UUID):
     _attendance = session.query(Attendance).filter(Attendance.intern_id == intern_id).first()
     if not _attendance:
         raise HTTPException(status_code=404, detail=f"Attendance with id:{intern_id} not found.")
@@ -47,7 +48,9 @@ def checkInAttendance(session:Session, intern_id:UUID):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        time_in=datetime.now()
+        #time_in=datetime.now()
+        #for testing
+        time_in="2025-08-05T06:10:37.880309"
     )
     session.add(_attendance)
     session.commit()
@@ -57,6 +60,7 @@ def checkInAttendance(session:Session, intern_id:UUID):
         "message": "Checked in successfully.",
         "time_in": _attendance.time_in
     }
+    
 def checkOutAttendance(session:Session, intern_id: UUID):
     #check todays attendance
     attendance = session.query(Attendance).filter(
@@ -90,11 +94,18 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     
     remaining = intern.total_hours - total_attended 
 
+    intern.time_remain = round(remaining.total_seconds() / 3600, 2)
+    session.commit()
+    session.refresh(intern)
+    
+    if not intern:
+        raise HTTPException(status_code=404, detail="Failed to check-out.")
+    
     return {
         "message": "Checked out successfully.",
         "time_out": attendance.time_out,
         "hours_today": attendance.total_hours,
-        "remaining_hours": remaining
+        "remaining_hours": intern.time_remain
     }
 
 def registerAttendanceByQr(session: Session, intern_id: UUID):
@@ -123,7 +134,6 @@ def removeAttendance(session:Session, intern_id: int):
 
 def updateAttendance(session:Session, 
                     intern_id: UUID,
-                    time_out: time,
                     check_in: str,
                     remarks: str,
                     total_hours: timedelta
@@ -131,7 +141,6 @@ def updateAttendance(session:Session,
     
     _attendance = getAttendanceById(session=session, intern_id=intern_id)
 
-    _attendance.time_out=time_out
     _attendance.check_in=check_in
     _attendance.remarks=remarks
     _attendance.total_hours=total_hours

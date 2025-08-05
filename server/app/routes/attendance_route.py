@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app.utils.db import get_db
 from sqlalchemy.orm import Session
 from app.schemas.attendance_schema import ResAttendance, ReqInternID, ReqUpdateAttendance, AttendanceSchema
@@ -56,18 +56,25 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
         Attendance.attendance_date == date.today()  
     ).first()
     
-    #get existing time in
-    time_in_datetime = existing_attendance.time_in
-    #for test purposes
-    #time_in_datetime = datetime.fromisoformat('2025-08-03T23:45:35.599136')
-    #get time out 
-    time_out_datetime = datetime.combine(date.today(), request.time_out)
-    #calculate total hours
-    total_hours = time_out_datetime - time_in_datetime
+    if not existing_attendance:
+        raise HTTPException(status_code=404, detail="Attendance record not found.")
+    
+    # keep existing value if not updating
+    total_hours = existing_attendance.total_hours  
+    
+    #update total_hours if time_out is provided
+    if request.time_out:
+        if existing_attendance.time_in is None:
+            raise HTTPException(status_code=400, detail="Time in is missing; cannot compute total hours.")
+
+        time_out_datetime = datetime.combine(date.today(), request.time_out)
+        total_hours = time_out_datetime - existing_attendance.time_in
+
+        # Optional: also update the time_out in the DB (if desired)
+        existing_attendance.time_out = request.time_out
 
     _attendance = attendance.updateAttendance(session,
                                             intern_id=request.intern_id,
-                                            time_out=time_out_datetime, 
                                             check_in=request.check_in,
                                             remarks=request.remarks,
                                             total_hours=total_hours
