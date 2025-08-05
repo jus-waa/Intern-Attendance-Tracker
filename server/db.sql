@@ -98,7 +98,7 @@ DROP TABLE intern;
 	intern_id UUID REFERENCES intern(intern_id) ON DELETE CASCADE,
 	attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	time_in TIMESTAMP,
-	time_out TIMESTAMP,
+	time_out TIMESTAMP, 	
 	total_hours INTERVAL, /*within the day*/	
 	check_in VARCHAR(255) CHECK(check_in IN ('Regular Hours', 'Late', 'Absent', 'Holiday', 'Early In', 'Early Out', 'Off Set', 'Overtime')),
 	remarks VARCHAR(255),

@@ -16,7 +16,7 @@ class InternSchema(BaseModel):
     time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
-    time_remain: Optional[int] = None
+    time_remain: Optional[timedelta] = None
     status: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -35,7 +35,6 @@ class ReqIntern(BaseModel):
     time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
-    time_remain: Optional[int] = None
     status: Optional[str] = None
     
 class ReqInternID(BaseModel):

@@ -36,6 +36,8 @@ def createIntern(session:Session, intern: InternSchema):
     if validateIntern:
         raise HTTPException(status_code=400, detail="Intern already exists.")
     
+    time_remain_condition =  intern.time_remain if intern.time_remain is not None else intern.total_hours
+
     _intern = Intern(
         intern_name=intern.intern_name,
         school_name=intern.school_name,
@@ -45,6 +47,7 @@ def createIntern(session:Session, intern: InternSchema):
         time_in=intern.time_in,
         time_out=intern.time_out,
         total_hours=intern.total_hours,
+        time_remain=time_remain_condition,
         status=intern.status,
         created_at=datetime.now(),
         updated_at=datetime.now()
@@ -72,12 +75,8 @@ def updateIntern(session:Session,
                 intern_name: str, 
                 school_name: str, 
                 shift_name: str, 
-                start_date: date,
-                end_date: date,
                 time_in: time, 
                 time_out: time, 
-                total_hours: timedelta, 
-                time_remain: int, 
                 status: str, 
                 ):
     _intern = getInternById(session=session, intern_id=intern_id)
@@ -85,12 +84,8 @@ def updateIntern(session:Session,
     _intern.intern_name=intern_name
     _intern.school_name=school_name
     _intern.shift_name=shift_name
-    _intern.start_date=start_date
-    _intern.end_date=end_date
     _intern.time_in=time_in
     _intern.time_out=time_out
-    _intern.total_hours=total_hours
-    _intern.time_remain=time_remain
     _intern.status=status
     _intern.updated_at=datetime.now()
     
