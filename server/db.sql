@@ -56,10 +56,12 @@ CREATE TABLE intern (
 	intern_name VARCHAR(255) NOT NULL,
 	school_name VARCHAR(255),
 	shift_name VARCHAR(255) NOT NULL,
+	start_date TIMESTAMP NOT NULL,
+	end_date TIMESTAMP NOT NULL,
 	time_in TIME,
 	time_out TIME,
 	total_hours INTERVAL,
-	time_remain INTERVAL,	
+	time_remain INTEGER,	
 	status VARCHAR(255) CHECK(status IN ('Active', 'Completed', 'Terminated')),
 	created_at TIMESTAMP DEFAULT current_timestamp,
 	updated_at TIMESTAMP DEFAULT current_timestamp
@@ -85,13 +87,13 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 SELECT * FROM intern;
 
-DELETE FROM intern;
+DELETE FROM intern;	
 
 DROP TABLE intern;
 
 
 /* ATTENDANCE */
-CREATE TABLE attendance (
+	CREATE TABLE attendance (
 	attendance_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	intern_id UUID REFERENCES intern(intern_id) ON DELETE CASCADE,
 	attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -106,5 +108,7 @@ CREATE TABLE attendance (
 DELETE FROM attendance;
 
 SELECT * FROM attendance;
+
+DROP TABLE attendance;
 
 DROP TABLE attendance;
