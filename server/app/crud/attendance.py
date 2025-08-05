@@ -48,9 +48,8 @@ def checkInAttendance(session:Session, intern_id:UUID):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        #time_in=datetime.now()
+        time_in=datetime.now()
         #for testing
-        time_in="2025-08-05T06:10:37.880309"
     )
     session.add(_attendance)
     session.commit()
@@ -92,9 +91,13 @@ def checkOutAttendance(session:Session, intern_id: UUID):
         Attendance.intern_id == intern_id
     ).scalar() or 0
     
-    remaining = intern.total_hours - total_attended 
+    #convert to hrs
+    if intern.total_hours and total_attended:
+        remaining = intern.total_hours - total_attended
+        intern.time_remain = remaining  # already a timedelta
+    else:
+        intern.time_remain = intern.total_hours
 
-    intern.time_remain = round(remaining.total_seconds() / 3600, 2)
     session.commit()
     session.refresh(intern)
     
