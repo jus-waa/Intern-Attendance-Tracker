@@ -61,7 +61,7 @@ CREATE TABLE intern (
 	time_in TIME,
 	time_out TIME,
 	total_hours INTERVAL,
-	time_remain INTEGER,	
+	time_remain INTERVAL,	
 	status VARCHAR(255) CHECK(status IN ('Active', 'Completed', 'Terminated')),
 	created_at TIMESTAMP DEFAULT current_timestamp,
 	updated_at TIMESTAMP DEFAULT current_timestamp
@@ -91,14 +91,13 @@ DELETE FROM intern;
 
 DROP TABLE intern;
 
-
 /* ATTENDANCE */
-	CREATE TABLE attendance (
+CREATE TABLE attendance (
 	attendance_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	intern_id UUID REFERENCES intern(intern_id) ON DELETE CASCADE,
 	attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	time_in TIMESTAMP,
-	time_out TIMESTAMP, 	
+	time_out TIMESTAMP,
 	total_hours INTERVAL, /*within the day*/	
 	check_in VARCHAR(255) CHECK(check_in IN ('Regular Hours', 'Late', 'Absent', 'Holiday', 'Early In', 'Early Out', 'Off Set', 'Overtime')),
 	remarks VARCHAR(255),
@@ -108,7 +107,5 @@ DROP TABLE intern;
 DELETE FROM attendance;
 
 SELECT * FROM attendance;
-
-DROP TABLE attendance;
 
 DROP TABLE attendance;
