@@ -1,11 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
+
 
   const Interns: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('CVSU');   
-  const [currentPage, setCurrentPage] = useState(1);                          
+  const [currentPage, setCurrentPage] = useState(1);  
+  const [actionMenuIndex, setActionMenuIndex] = useState<number | null>(null);  
+  const activeMenuRef = useRef<HTMLDivElement | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);                  
   const [formData, setFormData] = useState({
     fullName: '',
     schoolName: '',
@@ -15,9 +20,14 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
     timeOut: '',
     totalHours: '',
   });
-
+interface Intern {
+  id: string;
+  name: string;
+  school: string;
+}
   const interns = [
           {
+            id: "1",
             name: "Juan Dela Cruz",
             school: "Cavite State University - Main Campus",
             abbreviation: "CVSU",
@@ -27,6 +37,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
             isActive: true,
           },
           {
+            id: "2",
             name: "Maria Santos",
             school: "Cavite State University - Main Campus",
             abbreviation: "CVSU",
@@ -36,6 +47,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
             isActive: false,
           },
           {
+            id: "3",
             name: "Maria Santos",
             school: "Cavite State University - Main Campus",
             abbreviation: "CVSU",
@@ -45,6 +57,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
             isActive: false,
           },
           {
+            id: "4",
             name: "Maria Santos",
             school: "Cavite State University - Main Campus",
             abbreviation: "CVSU",
@@ -54,6 +67,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
             isActive: false,
           },
           {
+            id: "5",
             name: "Juan Dela Cruz",
             school: "Cavite State University - Main Campus",
             abbreviation: "CVSU",
@@ -63,6 +77,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
             isActive: true,
           },
           {
+            id: "6",
             name: "Juan Dela Cruz",
             school: "Cavite State University - Main Campus",
             abbreviation: "CVSU",
@@ -176,11 +191,9 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
 
     const itemsPerPage = 3;
     const totalPages = Math.ceil(interns.length / itemsPerPage);
-
     const getPageNumbers = () => {
         const pageNumbers = [];
         const maxPagesToShow = 5;
-
         if (totalPages <= maxPagesToShow) {
           // Show all pages
           for (let i = 1; i <= totalPages; i++) {
@@ -210,6 +223,27 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
         return pageNumbers;
       };
 
+        useEffect(() => {
+          const handleClickOutside = (event: MouseEvent) => {
+            if (
+              activeMenuRef.current &&
+              !activeMenuRef.current.contains(event.target as Node)
+            ) {
+              setActionMenuIndex(null);
+            }
+          };
+
+          if (actionMenuIndex !== null) {
+            document.addEventListener("mousedown", handleClickOutside);
+          }
+
+          return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+          };
+        }, [actionMenuIndex]);
+
+
+
   return (
     <div className="flex flex-col items-center min-h-screen px-4 relative">
       <div className="w-full max-w-6xl">
@@ -220,13 +254,15 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
     <div className="p-6">
 
       {/*search and add button*/}
-      <div className="w-full flex justify-end gap-2 mb-1">
+      <div className="w-full flex justify-end items-center gap-2 mb-1">
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="Search..."
-            className="px-4 py-2 border rounded-full w-60 shadow-md focus:outline-none focus:ring-2"
+            className="font-xs px-4 py-2 border rounded-full w-50 shadow-md focus:outline-none focus:ring-2"
           />
+
+        {/*Add Intern*/}
           <button
             onClick={() => setShowModal(true)}
             className="bg-[#25E2CC] text-white px-6 py-2 rounded-xl font-semibold hover:bg-[#1eb5a3] flex items-center gap-2"
@@ -247,26 +283,26 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
 
     {/* Main content */}
     {/* tab */}
-<div className="w-full max-w-5xl mx-auto mt-10 relative">
-    <div className="absolute -top-8 left-0 z-10 flex gap-2">
-      {schools.map((school) => (
-        <button
-          key={school}
-          onClick={() => setActiveTab(school)}
-          className={`px-4 py-1.5 text-sm font-medium rounded-t-lg shadow-md border-b-0 mb-[-1px]
-            ${
-              activeTab === school
-                ? "bg-white text-cyan-600 shadow-[0_-2px_6px_1px_rgba(0,0,0,0.04)] font-bold"
-                : "font-normal bg-transparent text-gray-600 hover:text-cyan-600 border-transparent shadow-none"
-            }`}
-          style={{
-            borderColor: activeTab === school ? "#e5e7eb" : "transparent",
-          }}
-        >
-          {school}
-        </button>
-      ))}
-    </div>
+    <div className="w-full max-w-5xl mx-auto mt-10 relative">
+        <div className="absolute -top-8 left-0 z-10 flex gap-2">
+          {schools.map((school) => (
+            <button
+              key={school}
+              onClick={() => setActiveTab(school)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-t-lg shadow-[0_-2px_6px_1px_rgba(0,0,0,0.04)] border-b-0 mb-[-1px]
+                ${
+                  activeTab === school
+                    ? "bg-white text-cyan-600  font-bold "
+                    : "font-normal bg-transparent text-gray-600 hover:text-cyan-600 border-transparent shadow-none"
+                }`}
+              style={{
+                borderColor: activeTab === school ? "#e5e7eb" : "transparent",
+              }}
+            >
+              {school}
+            </button>
+          ))}
+        </div>
 
     {/* Intern Cards */}
     <div className="relative bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl pt-2 pb-10 px-6 -mt-[1px] z-0">
@@ -276,6 +312,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const paginatedInterns = interns.slice(startIndex, endIndex);
+        
 
         return paginatedInterns.map((intern, index) => (
           <div key={index} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6">
@@ -307,13 +344,46 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 relative">
               <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600">
                 <Download className="w-8 h-8" strokeWidth={1} />
               </button>
-              <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600">
+            
+            <div className="relative">
+              <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600"
+                onClick={() => setActionMenuIndex(actionMenuIndex === index ? null : index)}>
                 <Ellipsis className="w-8 h-8" strokeWidth={1} />
+              
+              {/*Action menu modal*/}
+                {actionMenuIndex === index && (
+                  <div
+                    ref={activeMenuRef} // Attach ref here
+                    className="absolute top-10 left-0 bg-white border shadow-lg rounded-lg w-40 z-50"
+                  >
+                    <button
+                      onClick={() => {
+                        console.log("Edit intern:", intern.name);
+                        setActionMenuIndex(null);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                      console.log("Delete intern:", intern.name);
+                      setSelectedIntern(intern);  // ✅ Save intern data
+                      setShowDeleteModal(true);  
+                      setActionMenuIndex(null);  
+                    }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </button>
+            </div>
             </div>
           </div>
         ));
@@ -343,6 +413,37 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
             )
           )}
         </div>
+
+        {/*Delete Modal*/}
+        {showDeleteModal && selectedIntern && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md">
+      <h2 className="text-lg font-semibold mb-4 text-center">
+        Are you sure you want to delete this intern profile?
+      </h2>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => setShowDeleteModal(false)}
+          className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 transition"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            console.log("Delete intern:", selectedIntern);
+            // You can add your actual delete logic here (e.g., API call)
+            setShowDeleteModal(false);
+            setSelectedIntern(null);
+          }}
+          className="px-4 py-2 rounded-md hover:bg-[#7c1b1b] text-white bg-red-500 transition"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
