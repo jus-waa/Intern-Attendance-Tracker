@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from datetime import date, time, timedelta, datetime
@@ -26,15 +27,23 @@ def getBySchool(session:Session, school_name: str, skip:int = 0, limit:int = 100
         raise HTTPException(status_code=404, detail=f"Attendance with id:{school_name} not found.")
     return _attendance
 
-def registerAttendance(session:Session ,intern_id:UUID):
-    #validate if intern_id in attedance table is similar
-    _intern = session.query(Attendance).filter(
+def checkInAttendance(session:Session, intern_id:UUID):
+    #validate if intern_id in attendance table is similar
+    intern = session.query(Intern).filter(
+        Intern.intern_id == intern_id
+        ).first()
+    #check for check in
+    if not intern:
+        raise HTTPException(status_code=404, detail="Intern not found.")
+    #check for existing attendance
+    existing_attendance =  session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
         Attendance.attendance_date == date.today()
-        ).first()
-    if _intern:
-        raise HTTPException(status_code=400, detail="Attendance already exists for this time.")
-    
+    ).first()
+
+    if existing_attendance:
+        raise HTTPException(status_code=400, detail="Attendance already exist for today.")
+    #register time in
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
@@ -43,11 +52,65 @@ def registerAttendance(session:Session ,intern_id:UUID):
     session.add(_attendance)
     session.commit()
     session.refresh(_attendance)
-
-    if not _attendance:
-        raise HTTPException(status_code=404, detail="")
     
-    return _attendance
+    return {
+        "message": "Checked in successfully.",
+        "time_in": _attendance.time_in
+    }
+def checkOutAttendance(session:Session, intern_id: UUID):
+    #check todays attendance
+    attendance = session.query(Attendance).filter(
+        Attendance.intern_id == intern_id,
+        Attendance.attendance_date == date.today()
+    ).first()
+    
+    if not attendance:
+        raise HTTPException(status_code=404, detail="No check-in found today.")
+
+    if attendance.time_out:
+        raise HTTPException(status_code=400, detail="Already checked out today.")
+
+    #register timeout
+    time_out = datetime.now()
+    total_hours = (time_out - attendance.time_in)
+    attendance.time_out = time_out
+    attendance.total_hours = total_hours
+    
+    session.commit()
+    session.refresh(attendance)
+    
+    #calculate remaining hours
+    intern = session.query(Intern).filter(
+        Intern.intern_id == intern_id
+    ).first()
+    
+    total_attended = session.query(func.sum(Attendance.total_hours)).filter(
+        Attendance.intern_id == intern_id
+    ).scalar() or 0
+    
+    remaining = intern.total_hours - total_attended 
+
+    return {
+        "message": "Checked out successfully.",
+        "time_out": attendance.time_out,
+        "hours_today": attendance.total_hours,
+        "remaining_hours": remaining
+    }
+
+def registerAttendanceByQr(session: Session, intern_id: UUID):
+        #check todays attendance
+    attendance = session.query(Attendance).filter(
+        Attendance.intern_id == intern_id,
+        Attendance.attendance_date == date.today()
+    ).first()
+    
+    if not attendance:
+        return checkInAttendance(session, intern_id)
+        
+    if attendance.time_out:
+        raise HTTPException(status_code=400, detail="Already checked out today.")
+
+    return checkOutAttendance(session, intern_id)
 
 def removeAttendance(session:Session, intern_id: int):
     _attendance = getAttendanceById(session=session, intern_id=intern_id)

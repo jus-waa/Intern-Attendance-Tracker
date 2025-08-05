@@ -25,7 +25,7 @@ class InternSchema(BaseModel):
     class Config:
         from_attributes = True
 
-class ReqClockIn(BaseModel):
+class ReqInternID(BaseModel):
     intern_id: UUID
 
 class ReqUpdateAttendance(BaseModel):

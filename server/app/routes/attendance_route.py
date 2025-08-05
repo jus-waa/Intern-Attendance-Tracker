@@ -1,24 +1,37 @@
-from fastapi import APIRouter, HTTPException, Path, Depends
-from app.utils.db import SessionLocal, get_db
+from fastapi import APIRouter, Depends
+from app.utils.db import get_db
 from sqlalchemy.orm import Session
-from app.schemas.attendance_schema import ResAttendance, ReqClockIn, ReqUpdateAttendance, AttendanceSchema
-from app.schemas.intern_schema import ReqIntern
-from app.crud import attendance, intern
-from datetime import date, datetime, timedelta
+from app.schemas.attendance_schema import ResAttendance, ReqInternID, ReqUpdateAttendance, AttendanceSchema
+from app.crud import attendance
+from datetime import date, datetime
 from app.models.attendance_model import Attendance
 from app.utils.helper import convert_total_hours_to_float
 
 
 router = APIRouter()
 
-@router.post("/register")
-async def registerAttendance(request:ReqClockIn, session:Session=Depends(get_db)):
-    _attendance = attendance.registerAttendance(session, intern_id=request.intern_id)
+@router.post("/check-in")
+async def checkInAttendance(request:ReqInternID, session:Session=Depends(get_db)):
+    _attendance = attendance.checkInAttendance(session, intern_id=request.intern_id)
     _intern_id=request.intern_id
     return ResAttendance(code="201",
                          status="Created",
-                         message=f"Attendance by {_intern_id} successfully added.",
+                         message=f"Intern ID: {_intern_id} checked in.",
                          result=_attendance).model_dump(exclude_none=True)
+
+@router.post("/check-out")
+async def checkOutAttendance(request:ReqInternID, session:Session=Depends(get_db)):
+    _attendance = attendance.checkOutAttendance(session, intern_id=request.intern_id)
+    _intern_id=request.intern_id
+    return ResAttendance(code="201",
+                         status="Created",
+                         message=f"Intern ID: {_intern_id} checked out.",
+                         result=_attendance).model_dump(exclude_none=True)
+
+@router.post("/qr-scan")
+async def registerAttendanceByQr(request:ReqInternID, session:Session=Depends(get_db)):
+    _attendance = attendance.registerAttendanceByQr(session, intern_id=request.intern_id)
+    return _attendance
 
 @router.post("/scan")
 async def scanQRAttendance():
