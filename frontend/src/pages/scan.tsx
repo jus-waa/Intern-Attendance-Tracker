@@ -81,7 +81,10 @@ const handleSuccessScan = async (decodedText: string, decodedResult: Html5Qrcode
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({intern_id: decodedText}),
+        body: JSON.stringify({
+          intern_id: decodedText,
+          qr_code: decodedText // assuming the QR contains the intern_id only
+        }),
       });
 
       const result = await response.json();
@@ -106,7 +109,7 @@ const handleSuccessScan = async (decodedText: string, decodedResult: Html5Qrcode
       }
     }
 
-    setTimeout(() => {
+    setTimeout(() => {   
       setScannedResult('');
       startScanning();
     }, 3000);

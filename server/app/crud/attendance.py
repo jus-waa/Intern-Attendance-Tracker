@@ -76,3 +76,26 @@ def updateAttendance(session:Session,
         raise HTTPException(status_code=404, detail="Update Intern failed.") 
     return _attendance
 
+def scanQRAttendance(session: Session, intern_id: UUID, qr_code: str):                      
+    # Check if the intern already scanned in today
+    _intern = session.query(Attendance).filter(
+        Attendance.intern_id == intern_id,
+        Attendance.attendance_date == date.today()
+    ).first()
+
+    if _intern:
+        raise HTTPException(status_code=400, detail="Attendance already exists for this intern today.")
+
+    # If QR code is valid, save attendance
+    _attendance = Attendance(
+        intern_id=intern_id,
+        attendance_date=date.today(),
+        time_in=datetime.now(),
+        remarks="Scanned via QR"
+    )
+
+    session.add(_attendance)
+    session.commit()
+    session.refresh(_attendance)
+
+    return _attendance

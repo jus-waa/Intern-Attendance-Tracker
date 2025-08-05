@@ -27,6 +27,7 @@ class InternSchema(BaseModel):
 
 class ReqClockIn(BaseModel):
     intern_id: UUID
+    qr_code: str
 
 class ReqUpdateAttendance(BaseModel):
     intern_id: UUID
