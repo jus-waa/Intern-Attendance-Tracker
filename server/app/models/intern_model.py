@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Time, TIMESTAMP, Interval, text
+from sqlalchemy import Column, Integer, String, Time, TIMESTAMP, Interval, text, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -11,6 +11,8 @@ class Intern(Base):
     intern_name=Column(String(255), nullable=False)
     school_name=Column(String(255))
     shift_name=Column(String(255))
+    start_date=Column(Date)
+    end_date=Column(Date)
     time_in=Column(Time)
     time_out=Column(Time)
     total_hours=Column(Interval)
