@@ -10,7 +10,6 @@ from app.crud import intern_history
 
 router = APIRouter()
 
-# 🔹 Get all intern history records (flat)
 @router.get("/history", response_model=ResInternHistory[List[InternHistorySchema]])
 async def getAll(session: Session = Depends(get_db)):
     result = intern_history.getAllInternHistory(session)
@@ -37,7 +36,6 @@ async def getGroupedBySchool(session: Session = Depends(get_db)):
         result=dict(grouped)
     ).model_dump(exclude_none=True)
 
-# 🔹 Get intern history by intern ID
 @router.get("/{intern_id}", response_model=ResInternHistory[InternHistorySchema])
 async def getById(intern_id: UUID, session: Session = Depends(get_db)):
     result = intern_history.getInternHistoryById(session, intern_id)

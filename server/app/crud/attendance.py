@@ -6,6 +6,7 @@ from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
 from app.schemas.attendance_schema import ReqUpdateAttendance
 from app.utils.helper import convert_total_hours_to_float
+from datetime import timedelta
 from uuid import UUID
 
 def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
@@ -48,7 +49,6 @@ def checkInAttendance(session:Session, intern_id:UUID):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        time_in=datetime.today()
         #for testing
         time_in=datetime.now()
     )
@@ -131,7 +131,7 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     # Register timeout
     time_out = datetime.now()
 
-    # ✅ For testing only: simulate 320 hours of attendance
+    #For testing only: simulate 320 hours of attendance
     total_hours = timedelta(hours=320)
 
     attendance.time_out = time_out
@@ -149,20 +149,24 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     ).scalar() or 0
     
     remaining = intern.total_hours - total_attended
-    intern.time_remain = round(remaining.total_seconds() / 3600, 2)
+    intern.time_remain = timedelta(hours=round(remaining.total_seconds() / 3600, 2))
     session.commit()
     session.refresh(intern)
 
-    # ✅ Step 1: Mark intern as Completed if done
-    if intern.time_remain <= 0 and intern.status != "Completed":
+    #Step 1: Mark intern as Completed if done
+    if intern.time_remain <= timedelta(0) and intern.status != "Completed":
         intern.status = "Completed"
         session.commit()
+        session.flush()
+        session.expire_all()  #ensures updated status is reflected
 
-    # ✅ Step 2: Check if all interns from their school are done
     school_interns = session.query(Intern).filter(Intern.school_name == intern.school_name).all()
+
     all_done = all(i.status in ["Completed", "Terminated"] for i in school_interns)
 
-    # ✅ Step 3: Auto-transfer to intern_history
+    print("Intern status breakdown:", [(i.intern_name, i.status) for i in school_interns])
+    print("Ready to transfer:", all_done)
+
     if all_done:
         try:
             from app.crud.intern_history import transferSchoolToHistory

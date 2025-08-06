@@ -20,13 +20,9 @@ class InternHistorySchema(BaseModel):
     class Config:
         from_attributes = True
 
-
-# If you want to POST by school (optional)
 class ReqTransferInternHistory(BaseModel):
     school_name: str
 
-
-# Generic API response
 class ResInternHistory(BaseModel, Generic[T]):
     code: str
     status: str
