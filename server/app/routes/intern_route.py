@@ -14,7 +14,7 @@ router = APIRouter()
 
 #http methods
 @router.post("/register")
-async def create(request:ReqIntern, session:Session=Depends(get_db)):
+async def create(request:InternSchema, session:Session=Depends(get_db)):
     _intern = intern.createIntern(session, intern=request)
     intern_uuid = _intern.intern_id
     qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
@@ -64,15 +64,13 @@ async def update(request:ReqIntern, session:Session=Depends(get_db)):
                                   intern_id=request.intern_id,
                                   intern_name=request.intern_name,
                                   school_name=request.school_name,
+                                  abbreviation=request.abbreviation,
                                   shift_name=request.shift_name,
-                                  start_date=request.start_date,
-                                  end_date=request.end_date,
                                   time_in=request.time_in,
                                   time_out=request.time_out,
-                                  total_hours=request.total_hours,
-                                  time_remain=request.time_remain,
                                   status=request.status,
                                   )
+    _intern = convert_total_hours_single(_intern)
     return ResIntern(code="200",
                      status="Updated",
                      message="Intern Information updated successfully.",

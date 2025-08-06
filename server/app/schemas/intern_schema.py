@@ -10,13 +10,12 @@ class InternSchema(BaseModel):
     intern_id: Optional[UUID] = None
     intern_name: Optional[str] = None
     school_name: Optional[str] = None
+    abbreviation: Optional[str] = None
     shift_name: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
     time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
-    time_remain: Optional[int] = None
+    time_remain: Optional[timedelta] = None
     status: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -29,13 +28,11 @@ class ReqIntern(BaseModel):
     intern_id: Optional[UUID] = None
     intern_name: Optional[str] = None
     school_name: Optional[str] = None
+    abbreviation: Optional[str] = None
     shift_name: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
     time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
-    time_remain: Optional[int] = None
     status: Optional[str] = None
     
 class ReqInternID(BaseModel):

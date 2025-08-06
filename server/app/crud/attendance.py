@@ -22,10 +22,10 @@ def getAttendanceById(session:Session, intern_id: UUID):
         raise HTTPException(status_code=404, detail=f"Attendance with id:{intern_id} not found.")
     return _attendance
 
-def getBySchool(session:Session, school_name: str, skip:int = 0, limit:int = 100):
-    _attendance = session.query(Attendance).filter(Intern.school_name == school_name).all()
+def getBySchool(session:Session, abbreviation: str, skip:int = 0, limit:int = 100):
+    _attendance = session.query(Attendance).filter(Intern.abbreviation == abbreviation).all()
     if not _attendance:
-        raise HTTPException(status_code=404, detail=f"Attendance with id:{school_name} not found.")
+        raise HTTPException(status_code=404, detail=f"Attendance with id:{abbreviation} not found.")
     return _attendance
 
 def checkInAttendance(session:Session, intern_id:UUID):
@@ -48,7 +48,7 @@ def checkInAttendance(session:Session, intern_id:UUID):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        #time_in=datetime.now()
+        time_in=datetime.today()
         #for testing
         time_in=datetime.now()
     )
@@ -65,8 +65,8 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     #check todays attendance
     attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.attendance_date == date.today()
-    ).first()
+        Attendance.time_out == None
+    ).order_by(Attendance.time_in.desc()).first()
     
     if not attendance:
         raise HTTPException(status_code=404, detail="No check-in found today.")
@@ -92,9 +92,13 @@ def checkOutAttendance(session:Session, intern_id: UUID):
         Attendance.intern_id == intern_id
     ).scalar() or 0
     
-    remaining = intern.total_hours - total_attended 
+    #convert to hrs
+    if intern.total_hours and total_attended:
+        remaining = intern.total_hours - total_attended
+        intern.time_remain = remaining  # already a timedelta
+    else:
+        intern.time_remain = intern.total_hours
 
-    intern.time_remain = round(remaining.total_seconds() / 3600, 2)
     session.commit()
     session.refresh(intern)
     
@@ -175,7 +179,7 @@ def checkOutAttendance(session:Session, intern_id: UUID):
 
 
 def registerAttendanceByQr(session: Session, intern_id: UUID):
-        #check todays attendance
+    #check todays attendance
     attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
         Attendance.attendance_date == date.today()
