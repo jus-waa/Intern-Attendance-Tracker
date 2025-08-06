@@ -5,7 +5,7 @@ from app.schemas.attendance_schema import ResAttendance, ReqInternID, ReqUpdateA
 from app.crud import attendance
 from datetime import date, datetime
 from app.models.attendance_model import Attendance
-from app.utils.helper import convert_total_hours_to_float
+from app.utils.helper import convert_total_hours
 
 
 router = APIRouter()
@@ -40,7 +40,7 @@ async def scanQRAttendance():
 @router.get("/timesheet/{school_name}")
 async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
     _attendance = attendance.getBySchool(session, school_name, 0, 100)
-    _attendance = convert_total_hours_to_float(_attendance)
+    _attendance = convert_total_hours(_attendance)
     return ResAttendance(code="200",
                          status="Ok",
                          message=f"Intern from {school_name} fetched successfully.",

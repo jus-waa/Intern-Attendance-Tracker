@@ -27,3 +27,10 @@ def convert_total_hours_single(records):
 def convert_remaining(records):
     if records.time_remain is not None:
         records.time_remain = round(records.time_remain.total_seconds() / 3600, 2)
+
+def convert_total_hours(records):
+    for record in records:
+        if record.total_hours is not None:
+            record.total_hours = round(record.total_hours.total_seconds() / 3600, 2)
+    return records
+    

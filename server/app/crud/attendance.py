@@ -48,8 +48,10 @@ def checkInAttendance(session:Session, intern_id:UUID):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        time_in=datetime.now()
+        time_in=datetime.today()
         #for testing
+        #date(2025, 8, 5),
+        #(2025, 8, 5, 6, 0, 0)
     )
     session.add(_attendance)
     session.commit()
@@ -64,8 +66,8 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     #check todays attendance
     attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.attendance_date == date.today()
-    ).first()
+        Attendance.time_out == None
+    ).order_by(Attendance.time_in.desc()).first()
     
     if not attendance:
         raise HTTPException(status_code=404, detail="No check-in found today.")
@@ -112,7 +114,7 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     }
 
 def registerAttendanceByQr(session: Session, intern_id: UUID):
-        #check todays attendance
+    #check todays attendance
     attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
         Attendance.attendance_date == date.today()
