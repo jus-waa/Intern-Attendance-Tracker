@@ -45,8 +45,8 @@ INSERT INTO shift (shift_name) VALUES ('Night Shift');
 ALTER TABLE intern 
 ALTER COLUMN shift_id DROP NOT NULL;
 
-INSERT INTO intern (intern_name, time_in, time_out, time_remain, status, qr_code)
-VALUES ('Josh Lagrimas', '06:00:00', '17:00:00', '240 hours', 'Active', 'SampleQRCpde') RETURNING *;
+INSERT INTO intern (intern_name, time_in, time_out, time_remain, status)
+VALUES ('Josh Lagrimas', '06:00:00', '17:00:00', '240 hours', 'Active') RETURNING *;
 
 SELECT * FROM intern;
 /* LATEST SCRIPT */
@@ -56,12 +56,13 @@ CREATE TABLE intern (
 	intern_name VARCHAR(255) NOT NULL,
 	school_name VARCHAR(255),
 	shift_name VARCHAR(255) NOT NULL,
+	start_date TIMESTAMP NOT NULL,
+	end_date TIMESTAMP NOT NULL,
 	time_in TIME,
 	time_out TIME,
 	total_hours INTERVAL,
 	time_remain INTERVAL,	
 	status VARCHAR(255) CHECK(status IN ('Active', 'Completed', 'Terminated')),
-	qr_code TEXT,
 	created_at TIMESTAMP DEFAULT current_timestamp,
 	updated_at TIMESTAMP DEFAULT current_timestamp
 );	
@@ -84,47 +85,27 @@ CREATE TRIGGER trigger_updated_at
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-DROP TABLE intern;
-
 SELECT * FROM intern;
 
-DELETE FROM intern;
+DELETE FROM intern;	
+
+DROP TABLE intern;
+
 /* ATTENDANCE */
-CREATE TABLE intern (
-	intern_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-	intern_name VARCHAR(255) NOT NULL,
-	school_name VARCHAR(255),
-	shift_name VARCHAR(255) NOT NULL,
-	time_in TIME,
-	time_out TIME,
-	total_hours INTERVAL,
-	time_remain INTERVAL,	
-	status VARCHAR(255) CHECK(status IN ('Active', 'Completed', 'Terminated')),
-	qr_code TEXT,
-	created_at TIMESTAMP DEFAULT current_timestamp,
+CREATE TABLE attendance (
+	attendance_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	intern_id UUID REFERENCES intern(intern_id) ON DELETE CASCADE,
+	attendance_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	time_in TIMESTAMP,
+	time_out TIMESTAMP,
+	total_hours INTERVAL, /*within the day*/	
+	check_in VARCHAR(255) CHECK(check_in IN ('Regular Hours', 'Late', 'Absent', 'Holiday', 'Early In', 'Early Out', 'Off Set', 'Overtime')),
+	remarks VARCHAR(255),
 	updated_at TIMESTAMP DEFAULT current_timestamp
 );	
 
-SELECT gen_random_uuid();
+DELETE FROM attendance;
 
-CREATE OR REPLACE FUNCTION updated_at()
-	returns TRIGGER AS $$
-BEGIN 
-	NEW.updated_at = current_timestamp;
-	RETURN NEW;
-END;
-$$ LANGUAGE plpgsql
+SELECT * FROM attendance;
 
-CREATE TRIGGER trigger_updated_at
-	BEFORE UPDATE
-	ON intern
-	FOR EACH ROW
-	EXECUTE PROCEDURE updated_at()
-
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
-DROP TABLE intern;
-
-SELECT * FROM intern;
-
-DELETE FROM intern;
+DROP TABLE attendance;

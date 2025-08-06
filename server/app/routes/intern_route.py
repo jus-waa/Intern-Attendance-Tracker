@@ -5,6 +5,8 @@ from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern
 from app.utils.qr_generator import generateQrCode
 from app.crud import intern
 from uuid import UUID
+from app.utils.helper import convert_total_hours_to_float, convert_total_hours_single
+
 #sample change
 import os
 
@@ -12,42 +14,44 @@ router = APIRouter()
 
 #http methods
 @router.post("/register")
-async def create(request:ReqIntern, session:Session=Depends(get_db)):
-    _intern = intern.registerIntern(session, intern=request.parameter)
+async def create(request:InternSchema, session:Session=Depends(get_db)):
+    _intern = intern.createIntern(session, intern=request)
     intern_uuid = _intern.intern_id
-    request.parameter.qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
+    qr_code = generateQrCode(str(intern_uuid), filename=str(intern_uuid))
 
     return ResIntern(code="201", 
                      status="Created", 
                      message="Intern added successfully.", 
-                     result={
+                     result={ 
                         "uuid": str(intern_uuid),
-                        "qr_code_path": request.parameter.qr_code 
+                        "qr_code_path": qr_code 
                         }).model_dump(exclude_none=True)
 
 @router.get("/list")
 async def getAll(session:Session=Depends(get_db)):
     _intern = intern.getAllIntern(session, 0, 100)
+    _intern = convert_total_hours_to_float(_intern)
     return ResIntern(code="200",
                      status="Ok",
                      message="Intern information fetched successfully.",
                      result=_intern
                      ).model_dump(exclude_none=True)
 
-@router.get("/list/{id}")
+@router.get("/list/id:{id}")
 async def get(id:UUID, session:Session=Depends(get_db)):
     _intern = intern.getInternById(session, id)
+    _intern = convert_total_hours_single(_intern)
     return ResIntern(code="200",
                      status="Ok",
                      message="Intern id:{id} fetched successfully.",
                      result=_intern
                      ).model_dump(exclude_none=True)
 
-@router.delete("/remove")
+@router.delete("/delete")
 async def removeIntern(request:ReqIntern, session:Session=Depends(get_db)):
-    path = f"qrcodes/{request.parameter.intern_id}.png"
+    path = f"qrcodes/{request.intern_id}.png"
     os.remove(path)
-    _intern = intern.removeIntern(session, intern_id=request.parameter.intern_id)
+    _intern = intern.removeIntern(session, intern_id=request.intern_id)
     return ResIntern(code="200",
                      status="Ok",
                      message="Intern Information removed successfully.",
@@ -56,22 +60,18 @@ async def removeIntern(request:ReqIntern, session:Session=Depends(get_db)):
 
 @router.patch("/update")
 async def update(request:ReqIntern, session:Session=Depends(get_db)):
-    _intern = intern.updateIntern(session, intern_id=request.parameter.intern_id,
-                                  intern_name=request.parameter.intern_name,
-                                  school_name=request.parameter.school_name,
-                                  shift_name=request.parameter.shift_name,
-                                  time_in=request.parameter.time_in,
-                                  time_out=request.parameter.time_out,
-                                  total_hours=request.parameter.total_hours,
-                                  time_remain=request.parameter.time_remain,
-                                  status=request.parameter.status,
-                                  qr_code=request.parameter.qr_code,
-                                  created_at=request.parameter.created_at,
-                                  updated_at=request.parameter.updated_at
+    _intern = intern.updateIntern(session,
+                                  intern_id=request.intern_id,
+                                  intern_name=request.intern_name,
+                                  school_name=request.school_name,
+                                  shift_name=request.shift_name,
+                                  time_in=request.time_in,
+                                  time_out=request.time_out,
+                                  status=request.status,
                                   )
+    _intern = convert_total_hours_single(_intern)
     return ResIntern(code="200",
                      status="Updated",
                      message="Intern Information updated successfully.",
                      result=_intern
                      ).model_dump(exclude_none=True)
-
