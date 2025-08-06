@@ -50,7 +50,7 @@ def checkInAttendance(session:Session, intern_id:UUID):
         attendance_date=date.today(),
         #time_in=datetime.now()
         #for testing
-        time_in="2025-08-05T06:10:37.880309"
+        time_in=datetime.now()
     )
     session.add(_attendance)
     session.commit()
@@ -60,7 +60,7 @@ def checkInAttendance(session:Session, intern_id:UUID):
         "message": "Checked in successfully.",
         "time_in": _attendance.time_in
     }
-    
+'''
 def checkOutAttendance(session:Session, intern_id: UUID):
     #check todays attendance
     attendance = session.query(Attendance).filter(
@@ -107,6 +107,72 @@ def checkOutAttendance(session:Session, intern_id: UUID):
         "hours_today": attendance.total_hours,
         "remaining_hours": intern.time_remain
     }
+'''
+def checkOutAttendance(session:Session, intern_id: UUID):
+    # Check today's attendance
+    attendance = session.query(Attendance).filter(
+        Attendance.intern_id == intern_id,
+        Attendance.attendance_date == date.today()
+    ).first()
+    
+    if not attendance:
+        raise HTTPException(status_code=404, detail="No check-in found today.")
+
+    if attendance.time_out:
+        raise HTTPException(status_code=400, detail="Already checked out today.")
+
+    # Register timeout
+    '''time_out = datetime.now()
+    total_hours = (time_out - attendance.time_in)'''
+    # Register timeout
+    time_out = datetime.now()
+
+    # ✅ For testing only: simulate 320 hours of attendance
+    total_hours = timedelta(hours=320)
+
+    attendance.time_out = time_out
+    attendance.total_hours = total_hours
+    session.commit()
+    session.refresh(attendance)
+    
+    # Calculate remaining hours
+    intern = session.query(Intern).filter(
+        Intern.intern_id == intern_id
+    ).first()
+    
+    total_attended = session.query(func.sum(Attendance.total_hours)).filter(
+        Attendance.intern_id == intern_id
+    ).scalar() or 0
+    
+    remaining = intern.total_hours - total_attended
+    intern.time_remain = round(remaining.total_seconds() / 3600, 2)
+    session.commit()
+    session.refresh(intern)
+
+    # ✅ Step 1: Mark intern as Completed if done
+    if intern.time_remain <= 0 and intern.status != "Completed":
+        intern.status = "Completed"
+        session.commit()
+
+    # ✅ Step 2: Check if all interns from their school are done
+    school_interns = session.query(Intern).filter(Intern.school_name == intern.school_name).all()
+    all_done = all(i.status in ["Completed", "Terminated"] for i in school_interns)
+
+    # ✅ Step 3: Auto-transfer to intern_history
+    if all_done:
+        try:
+            from app.crud.intern_history import transferSchoolToHistory
+            transferSchoolToHistory(session, intern.school_name)
+        except Exception as e:
+            print(f"Auto-transfer failed for {intern.school_name}: {e}")
+
+    return {
+        "message": "Checked out successfully.",
+        "time_out": attendance.time_out,
+        "hours_today": attendance.total_hours,
+        "remaining_hours": intern.time_remain
+    }
+
 
 def registerAttendanceByQr(session: Session, intern_id: UUID):
         #check todays attendance
