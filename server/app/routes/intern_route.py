@@ -64,6 +64,7 @@ async def update(request:ReqIntern, session:Session=Depends(get_db)):
                                   intern_id=request.intern_id,
                                   intern_name=request.intern_name,
                                   school_name=request.school_name,
+                                  abbreviation=request.abbreviation,
                                   shift_name=request.shift_name,
                                   time_in=request.time_in,
                                   time_out=request.time_out,

@@ -41,9 +41,8 @@ def createIntern(session:Session, intern: InternSchema):
     _intern = Intern(
         intern_name=intern.intern_name,
         school_name=intern.school_name,
+        abbreviation=intern.abbreviation,
         shift_name=intern.shift_name,
-        start_date=intern.start_date,
-        end_date=intern.end_date,
         time_in=intern.time_in,
         time_out=intern.time_out,
         total_hours=intern.total_hours,
@@ -74,6 +73,7 @@ def updateIntern(session:Session,
                 intern_id: UUID,
                 intern_name: str, 
                 school_name: str, 
+                abbreviation: str,
                 shift_name: str, 
                 time_in: time, 
                 time_out: time, 
@@ -83,6 +83,7 @@ def updateIntern(session:Session,
     
     _intern.intern_name=intern_name
     _intern.school_name=school_name
+    _intern.abbreviation=abbreviation
     _intern.shift_name=shift_name
     _intern.time_in=time_in
     _intern.time_out=time_out

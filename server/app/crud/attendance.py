@@ -22,10 +22,10 @@ def getAttendanceById(session:Session, intern_id: UUID):
         raise HTTPException(status_code=404, detail=f"Attendance with id:{intern_id} not found.")
     return _attendance
 
-def getBySchool(session:Session, school_name: str, skip:int = 0, limit:int = 100):
-    _attendance = session.query(Attendance).filter(Intern.school_name == school_name).all()
+def getBySchool(session:Session, abbreviation: str, skip:int = 0, limit:int = 100):
+    _attendance = session.query(Attendance).filter(Intern.abbreviation == abbreviation).all()
     if not _attendance:
-        raise HTTPException(status_code=404, detail=f"Attendance with id:{school_name} not found.")
+        raise HTTPException(status_code=404, detail=f"Attendance with id:{abbreviation} not found.")
     return _attendance
 
 def checkInAttendance(session:Session, intern_id:UUID):
