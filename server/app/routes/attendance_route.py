@@ -70,7 +70,7 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
         time_out_datetime = datetime.combine(date.today(), request.time_out)
         total_hours = time_out_datetime - existing_attendance.time_in
 
-        # Optional: also update the time_out in the DB (if desired)
+        # update timeout in db
         existing_attendance.time_out = request.time_out
 
     _attendance = attendance.updateAttendance(session,

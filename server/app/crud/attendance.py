@@ -6,6 +6,7 @@ from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
 from app.schemas.attendance_schema import ReqUpdateAttendance
 from app.utils.helper import convert_total_hours_to_float
+from datetime import timedelta
 from uuid import UUID
 
 def getAllAttendance(session:Session, skip:int = 0, limit:int = 100):
@@ -48,10 +49,8 @@ def checkInAttendance(session:Session, intern_id:UUID):
     _attendance = Attendance(
         intern_id=intern_id,
         attendance_date=date.today(),
-        time_in=datetime.today()
         #for testing
-        #date(2025, 8, 5),
-        #(2025, 8, 5, 6, 0, 0)
+        time_in=datetime.now()
     )
     session.add(_attendance)
     session.commit()
@@ -61,13 +60,13 @@ def checkInAttendance(session:Session, intern_id:UUID):
         "message": "Checked in successfully.",
         "time_in": _attendance.time_in
     }
-    
+
 def checkOutAttendance(session:Session, intern_id: UUID):
-    #check todays attendance
+    # Check today's attendance
     attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.time_out == None
-    ).order_by(Attendance.time_in.desc()).first()
+        Attendance.attendance_date == date.today()
+    ).first()
     
     if not attendance:
         raise HTTPException(status_code=404, detail="No check-in found today.")
@@ -75,7 +74,7 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     if attendance.time_out:
         raise HTTPException(status_code=400, detail="Already checked out today.")
 
-    #register timeout
+    # Register timeout
     time_out = datetime.now()
     total_hours = (time_out - attendance.time_in)
     attendance.time_out = time_out
@@ -84,7 +83,7 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     session.commit()
     session.refresh(attendance)
     
-    #calculate remaining hours
+    # Calculate remaining hours
     intern = session.query(Intern).filter(
         Intern.intern_id == intern_id
     ).first()
@@ -93,7 +92,6 @@ def checkOutAttendance(session:Session, intern_id: UUID):
         Attendance.intern_id == intern_id
     ).scalar() or 0
     
-    #convert to hrs
     if intern.total_hours and total_attended:
         remaining = intern.total_hours - total_attended
         intern.time_remain = remaining  # already a timedelta
@@ -102,10 +100,31 @@ def checkOutAttendance(session:Session, intern_id: UUID):
 
     session.commit()
     session.refresh(intern)
-    
+
     if not intern:
         raise HTTPException(status_code=404, detail="Failed to check-out.")
     
+    #mark as completed
+    if intern.time_remain <= timedelta(0) and intern.status != "Completed":
+        intern.status = "Completed"
+        session.commit()
+        session.flush()
+        session.expire_all()  #ensures updated status is reflected
+
+    school_interns = session.query(Intern).filter(Intern.school_name == intern.school_name).all()
+
+    all_done = all(i.status in ["Completed", "Terminated"] for i in school_interns)
+
+    print("Intern status breakdown:", [(i.intern_name, i.status) for i in school_interns])
+    print("Ready to transfer:", all_done)
+
+    if all_done:
+        try:
+            from app.crud.intern_history import transferSchoolToHistory
+            transferSchoolToHistory(session, intern.school_name)
+        except Exception as e:
+            print(f"Auto-transfer failed for {intern.school_name}: {e}")
+
     return {
         "message": "Checked out successfully.",
         "time_out": attendance.time_out,

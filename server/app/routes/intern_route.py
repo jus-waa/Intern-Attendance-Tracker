@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends
 from app.utils.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
-from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern 
+from app.schemas.intern_schema import InternSchema, ReqIntern, ResIntern, ReqInternID
 from app.utils.qr_generator import generateQrCode
 from app.crud import intern
 from uuid import UUID
@@ -48,7 +48,7 @@ async def get(id:UUID, session:Session=Depends(get_db)):
                      ).model_dump(exclude_none=True)
 
 @router.delete("/delete")
-async def removeIntern(request:ReqIntern, session:Session=Depends(get_db)):
+async def removeIntern(request:ReqInternID, session:Session=Depends(get_db)):
     path = f"qrcodes/{request.intern_id}.png"
     os.remove(path)
     _intern = intern.removeIntern(session, intern_id=request.intern_id)
@@ -68,6 +68,8 @@ async def update(request:ReqIntern, session:Session=Depends(get_db)):
                                   shift_name=request.shift_name,
                                   time_in=request.time_in,
                                   time_out=request.time_out,
+                                  total_hours=request.total_hours,
+                                  time_remain=request.time_remain,
                                   status=request.status,
                                   )
     _intern = convert_total_hours_single(_intern)

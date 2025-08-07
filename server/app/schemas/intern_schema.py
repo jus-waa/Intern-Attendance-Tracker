@@ -7,16 +7,15 @@ T = TypeVar('T')
 
 #Intern schema based on db
 class InternSchema(BaseModel):
-    intern_id: Optional[UUID] = None
-    intern_name: Optional[str] = None
-    school_name: Optional[str] = None
-    abbreviation: Optional[str] = None
-    shift_name: Optional[str] = None
-    time_in: Optional[time] = None
-    time_out: Optional[time] = None
-    total_hours: Optional[timedelta] = None
+    intern_name: str
+    school_name: str
+    abbreviation: str
+    shift_name: str
+    time_in: time
+    time_out: time
+    total_hours: timedelta
     time_remain: Optional[timedelta] = None
-    status: Optional[str] = None
+    status: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     
@@ -25,15 +24,16 @@ class InternSchema(BaseModel):
 
 #used for inputting values
 class ReqIntern(BaseModel):
-    intern_id: Optional[UUID] = None
-    intern_name: Optional[str] = None
-    school_name: Optional[str] = None
-    abbreviation: Optional[str] = None
-    shift_name: Optional[str] = None
-    time_in: Optional[time] = None
-    time_out: Optional[time] = None
+    intern_id: UUID
+    intern_name: str
+    school_name: str
+    abbreviation: str
+    shift_name: str
+    time_in: time
+    time_out: time
     total_hours: Optional[timedelta] = None
-    status: Optional[str] = None
+    time_remain: Optional[timedelta] = None
+    status: str
     
 class ReqInternID(BaseModel):
     intern_id: UUID

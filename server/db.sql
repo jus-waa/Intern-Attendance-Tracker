@@ -1,4 +1,5 @@
 /* LATEST SCRIPT */
+
 /* INTERN */
 CREATE TABLE intern (
 	intern_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -58,3 +59,19 @@ DELETE FROM attendance;
 SELECT * FROM attendance;	
 
 DROP TABLE attendance;
+
+/* Intern_History Table*/
+CREATE TABLE intern_history (
+    intern_id UUID PRIMARY KEY,
+    intern_name VARCHAR(255),
+    school_name VARCHAR(255),
+    abbreviation VARCHAR(255),
+    shift_name VARCHAR(255),
+    total_hours INTERVAL,
+    status VARCHAR(255)
+);
+
+SELECT * FROM intern_history;
+
+DROP TABLE intern_history;
+
