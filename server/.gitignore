@@ -8,7 +8,7 @@ __pycache__/
 
 # Environemnt Variables
 .env
-qrcodes/
+qrcodes
 # VSCode or IDE settings
 .vscode/
 .idea/
