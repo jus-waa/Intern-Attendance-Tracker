@@ -28,9 +28,8 @@ def getInternHistoryById(session: Session, intern_id: UUID):
 
 def getInternHistoryBySchool(session: Session, abbreviation: str):
     #get all interns that are Completed or Terminated
-    finished_interns = session.query(Intern).filter(
-        Intern.abbreviation == abbreviation,
-        Intern.status.in_(["Completed", "Terminated"])
+    finished_interns = session.query(InternHistory).filter(
+        InternHistory.abbreviation == abbreviation,
     ).all()
 
     if not finished_interns:
@@ -82,6 +81,17 @@ def transferSchoolToHistory(session: Session, abbreviation: str):
     except SQLAlchemyError as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Database error during transfer: {str(e)}")
+
+def deleteAllBySchool(session: Session, abbreviation: str):
+    _intern_history = getInternHistoryBySchool(session=session, abbreviation=abbreviation)
+    
+    for intern in _intern_history:
+        session.delete(intern)
+    
+    session.commit()
+    
+    return {"message": f"Interns from {abbreviation} deleted successfully."}
+    
     
 def deleteOldInternHistory(session: Session):
     # Records older than 30 days from today

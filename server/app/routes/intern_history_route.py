@@ -53,6 +53,15 @@ async def transferCompletedToHistory(abbreviation: str, session: Session = Depen
         result=result["message"]
     ).model_dump(exclude_none=True)
 
+@router.delete("/school/delete")
+async def removeHistoryBySchool(request: ReqTransferInternHistory, session: Session=Depends(get_db)):
+    _intern_history = intern_history.deleteAllBySchool(session, abbreviation=request.abbreviation)
+    return ResInternHistory(code="200",
+                     status="Ok",
+                     message="Intern Information removed successfully.",
+                     result=_intern_history
+                     ).model_dump(exclude_none=True)
+
 #delete intern histories older than 1 month
 @router.delete("/expired", response_model=ResInternHistory[str])
 async def removeExpiredHistory(session: Session = Depends(get_db)):
