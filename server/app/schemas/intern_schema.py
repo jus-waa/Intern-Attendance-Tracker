@@ -31,7 +31,8 @@ class ReqIntern(BaseModel):
     shift_name: str
     time_in: time
     time_out: time
-    total_hours: timedelta
+    total_hours: Optional[timedelta] = None
+    time_remain: Optional[timedelta] = None
     status: str
     
 class ReqInternID(BaseModel):

@@ -7,7 +7,7 @@ __pycache__/
 *.py[cod]
 
 # Environemnt Variables
-.env/
+.env
 qrcodes/
 # VSCode or IDE settings
 .vscode/

@@ -68,6 +68,8 @@ async def update(request:ReqIntern, session:Session=Depends(get_db)):
                                   shift_name=request.shift_name,
                                   time_in=request.time_in,
                                   time_out=request.time_out,
+                                  total_hours=request.total_hours,
+                                  time_remain=request.time_remain,
                                   status=request.status,
                                   )
     _intern = convert_total_hours_single(_intern)
