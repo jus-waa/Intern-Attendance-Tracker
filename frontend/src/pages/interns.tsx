@@ -1,16 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
+import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react";
 
 
   const Interns: React.FC = () => {
-  const [showModal, setShowModal] = useState(false);
+  const [showAddInternModal, setAddInternModal] = useState(false);
+  const [showEditModal, setEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState('CVSU');   
   const [currentPage, setCurrentPage] = useState(1);  
   const [actionMenuIndex, setActionMenuIndex] = useState<number | null>(null);  
   const activeMenuRef = useRef<HTMLDivElement | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);                  
+  const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null); 
+  
+  const statusOptions = ['Active', 'Completed', 'Terminated'];  
+
   const [formData, setFormData] = useState({
     fullName: '',
     schoolName: '',
@@ -19,6 +23,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis} from "lucide-react";
     timeIn: '',
     timeOut: '',
     totalHours: '',
+    status:'',
   });
 interface Intern {
   id: string;
@@ -91,7 +96,7 @@ interface Intern {
   const location = useLocation();
   useEffect(() => {
     if (location.state?.openModal) {
-      setShowModal(true);
+      setAddInternModal(true);
     }
   }, [location.state]);
 
@@ -107,11 +112,11 @@ interface Intern {
   };
 
   useEffect(() => {
-    if (showModal) {
+    if (showAddInternModal) {
       const now = new Date();
       setDateCreated(now.toISOString());
     }
-  }, [showModal]);
+  }, [showAddInternModal]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -174,7 +179,8 @@ interface Intern {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ ...formData, dateCreated });
-    setShowModal(false);
+    setAddInternModal(false);
+    setEditModal(false);
     setFormData({
       fullName: '',
       schoolName: '',
@@ -183,45 +189,48 @@ interface Intern {
       timeIn: '',
       timeOut: '',
       totalHours: '',
+      status:'',
     });
   };
 
   const { min: timeInMin, max: timeInMax } = getTimeInRange();
   const schools = ['CVSU', 'LSPU', 'NTC'];
 
-    const itemsPerPage = 3;
-    const totalPages = Math.ceil(interns.length / itemsPerPage);
-    const getPageNumbers = () => {
-        const pageNumbers = [];
-        const maxPagesToShow = 5;
-        if (totalPages <= maxPagesToShow) {
-          // Show all pages
-          for (let i = 1; i <= totalPages; i++) {
-            pageNumbers.push(i);
-          }
-        } else {
-          pageNumbers.push(1); // Always show first page
+      const itemsPerPage = 3;
+        const totalPages = Math.ceil(interns.length / itemsPerPage);
 
-          if (currentPage > 3) {
-            pageNumbers.push("..."); // Ellipsis before current
-          }
+      const getPageNumbers = () => {
+      const pageNumbers: (number | string)[] = [];
+      const maxPagesToShow = 5;
 
-          const startPage = Math.max(2, currentPage - 1);
-          const endPage = Math.min(totalPages - 1, currentPage + 1);
+      if (totalPages <= maxPagesToShow) {
+        for (let i = 1; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1); // Always show first
 
-          for (let i = startPage; i <= endPage; i++) {
-            pageNumbers.push(i);
-          }
-
-          if (currentPage < totalPages - 2) {
-            pageNumbers.push("..."); // Ellipsis after current
-          }
-
-          pageNumbers.push(totalPages); // Always show last page
+        if (currentPage > 3) {
+          pageNumbers.push("..."); // Ellipsis before current
         }
 
-        return pageNumbers;
-      };
+        const startPage = Math.max(2, currentPage - 1);
+        const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+        for (let i = startPage; i <= endPage; i++) {
+          pageNumbers.push(i);
+        }
+
+        if (currentPage < totalPages - 2) {
+          pageNumbers.push("..."); // Ellipsis after current
+        }
+
+        pageNumbers.push(totalPages); // Always show last
+      }
+
+      return pageNumbers;
+    };
+
 
         useEffect(() => {
           const handleClickOutside = (event: MouseEvent) => {
@@ -255,16 +264,20 @@ interface Intern {
 
       {/*search and add button*/}
       <div className="w-full flex justify-end items-center gap-2 mb-1">
-        <div className="flex gap-2">
+
+        {/*Search*/}
+        <div className="relative">
           <input
             type="text"
             placeholder="Search..."
             className="font-xs px-4 py-2 border rounded-full w-50 shadow-md focus:outline-none focus:ring-2"
           />
-
+          <Search className="w-5 h-5 text-gray-600 absolute right-3 top-1/2 transform -translate-y-1/2"/>
+        </div>
+          
         {/*Add Intern*/}
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => setAddInternModal(true)}
             className="bg-[#25E2CC] text-white px-6 py-2 rounded-xl font-semibold hover:bg-[#1eb5a3] flex items-center gap-2"
           >
             Add Intern
@@ -278,7 +291,7 @@ interface Intern {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
           </button>
-        </div>
+        
       </div>
 
     {/* Main content */}
@@ -305,14 +318,23 @@ interface Intern {
         </div>
 
     {/* Intern Cards */}
-    <div className="relative bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl pt-2 pb-10 px-6 -mt-[1px] z-0">
-      {activeTab === "CVSU" && (() => {
-        
+    <div className="relative bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl pt-2 pb-10 px-6 -mt-[1px] z-0 overflow-visible" style={{ minHeight: '400px', maxHeight: '400px'}}>
+      {(() => {
+        const filteredInterns = interns.filter(
+          (intern) => intern.abbreviation === activeTab
+        );
 
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        const paginatedInterns = interns.slice(startIndex, endIndex);
-        
+        const paginatedInterns = filteredInterns.slice(startIndex, endIndex);
+
+        if (filteredInterns.length === 0) {
+        return (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-300 text-lg font-normal p-5">No existing intern.</p>
+          </div>
+        );
+      }
 
         return paginatedInterns.map((intern, index) => (
           <div key={index} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6">
@@ -361,8 +383,8 @@ interface Intern {
                     className="absolute top-10 left-0 bg-white border shadow-lg rounded-lg w-40 z-50"
                   >
                     <button
-                      onClick={() => {
-                        console.log("Edit intern:", intern.name);
+                      onClick={() => {setEditModal(true)
+                        console.log("Edit intern:", intern.name); 
                         setActionMenuIndex(null);
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -394,58 +416,84 @@ interface Intern {
 
 
         {/*page number */}
-        <div className="flex justify-center mt-4 gap-1">
+      <div className="w-full flex justify-end mt-5">
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-3 py-1 rounded border ${
+              currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-200'
+            }`}
+          >
+            &lt;
+          </button>
+
           {getPageNumbers().map((page, index) =>
-            page === "..." ? (
-              <span key={index} className="px-2 text-gray-500">...</span>
-            ) : (
+            typeof page === "number" ? (
               <button
                 key={index}
-                onClick={() => setCurrentPage(Number(page))}
-                className={`px-3 py-1 rounded-full text-sm ${
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded border ${
                   currentPage === page
-                    ? "bg-cyan-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? 'bg-[#25E2CC] text-white font-semibold'
+                    : 'hover:bg-gray-200'
                 }`}
               >
                 {page}
               </button>
+            ) : (
+              <span key={index} className="px-2 text-gray-500 select-none">
+                ...
+              </span>
             )
           )}
+
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-3 py-1 rounded border ${
+              currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-200'
+            }`}
+          >
+            &gt;
+          </button>
         </div>
+      </div>
+
+
 
         {/*Delete Modal*/}
         {showDeleteModal && selectedIntern && (
-  <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-    <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md">
-      <h2 className="text-lg font-semibold mb-4 text-center">
-        Are you sure you want to delete this intern profile?
-      </h2>
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={() => setShowDeleteModal(false)}
-          className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 transition"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => {
-            console.log("Delete intern:", selectedIntern);
-            // You can add your actual delete logic here (e.g., API call)
-            setShowDeleteModal(false);
-            setSelectedIntern(null);
-          }}
-          className="px-4 py-2 rounded-md hover:bg-[#7c1b1b] text-white bg-red-500 transition"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md">
+              <h2 className="text-lg font-semibold mb-4 text-center">
+                Are you sure you want to delete this intern profile?
+              </h2>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    console.log("Delete intern:", selectedIntern);
+                    // You can add your actual delete logic here (e.g., API call)
+                    setShowDeleteModal(false);
+                    setSelectedIntern(null);
+                  }}
+                  className="px-4 py-2 rounded-md hover:bg-[#7c1b1b] text-white bg-red-500 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-
-        {showModal && (
+        {/* Add Intern Modal */}
+        {showAddInternModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-xl relative">
             <h2 className="text-xl font-[650] mb-4 text-[#0D223D]">Add Intern</h2>
@@ -478,8 +526,75 @@ interface Intern {
               </div>
               <input type="number" name="totalHours" placeholder="Total Hours for Completion" value={formData.totalHours} onChange={handleChange} required className="w-full border p-2 rounded" />
               <div className="flex justify-end gap-2 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+                <button type="button" onClick={() => setAddInternModal(false)} className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
                 <button type="submit" className="bg-[#25E2CC] text-white font-semibold px-4 py-2 rounded hover:bg-[#1eb5a3]">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        )}
+
+         {/* Edit Intern Modal */}
+        {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-full max-w-xl relative">
+            <h2 className="text-xl font-[650] mb-4 text-[#0D223D]">Edit Intern Details</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} required className="w-full border p-2 rounded" />
+              <div className="grid grid-cols-4 gap-2">
+                <div className="col-span-3">
+                  <input type="text" name="schoolName" placeholder="School Name" value={formData.schoolName} onChange={handleChange} required className="w-full border p-2 rounded" />
+                </div>
+                <div className="col-span-1">
+                  <input type="text" name="schoolAbbreviation" placeholder="Abbreviation" value={formData.schoolAbbreviation} onChange={handleChange} required className="w-full border p-2 rounded text-md" />
+                </div>
+              </div>
+              <select name="shift" value={formData.shift} onChange={handleChange} required className="w-full border p-2 rounded">
+                <option value="">Select Shift</option>
+                <option>Day Shift</option>
+                <option>Mid Shift</option>
+                <option>Night Shift</option>
+                <option>Graveyard Shift</option>
+              </select>
+              <div className="flex gap-2 text-gray-900">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium">Time In</label>
+                  <input type="time" name="timeIn" value={formData.timeIn} onChange={handleChange} onBlur={handleTimeInBlur} min={timeInMin} max={timeInMax} required className="w-full border p-2 rounded text-gray-900" />
+                </div>
+                <div className="flex-1 text-gray-900">
+                  <label className="block text-sm font-medium">Time Out</label>
+                  <input type="time" name="timeOut" value={formData.timeOut} onChange={handleChange} onKeyDown={preventManualTimeInput} required className="w-full border p-2 rounded text-gray-900" />
+                </div>
+              </div>
+              
+      <div className="flex gap-2 text-gray-900">
+        <div className="flex-1">
+          <input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder='Total Hours for Completion:'required className="w-full border p-2 rounded text-gray-900" />
+        </div>
+      <div className="flex gap-2 text-gray-900">
+        <div className="flex-1">
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            required
+            className="w-full border p-2 rounded bg-white text-left"
+          >
+            <option value="" disabled hidden>
+              Select Status
+            </option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </div>
+        </div>
+      </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setEditModal(false)} className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+                <button type="submit" className="bg-[#25E2CC] text-white font-semibold px-4 py-2 rounded hover:bg-[#1eb5a3]">Save Changes</button>
               </div>
             </form>
           </div>
