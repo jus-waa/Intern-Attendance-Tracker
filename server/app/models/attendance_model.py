@@ -7,6 +7,7 @@ class Attendance(Base):
     attendance_id=Column(Integer, autoincrement=True, primary_key=True)
     intern_id=Column(UUID, ForeignKey("intern.intern_id"))
     attendance_date=Column(Date, server_default=text('CURRENT_DATE'))
+    abbreviation=Column(String(255))
     time_in=Column(TIMESTAMP(timezone=True)) 
     time_out=Column(TIMESTAMP(timezone=True)) 
     total_hours=Column(Interval)
