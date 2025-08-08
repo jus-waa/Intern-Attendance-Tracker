@@ -220,7 +220,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
         </div>
         <div className="py-4">
           {/*Search and Add button*/}
-          <div className="w-full flex justify-end items-center gap-2 mb-1 text-sm">
+          <div className="w-full flex justify-end items-center gap-2 mb-1 text-sm border-2 border-violet-500">
             {/*Search*/}
             <div className="relative">
               <input
@@ -268,8 +268,8 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                 </button>
               ))}
             </div>
-            {/* Interns per row*/}
-            <div className="relative bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl pt-2 pb-10 px-6 -mt-[1px] z-0 overflow-visible" style={{ minHeight: '400px', maxHeight: '400px'}}>
+            {/* Interns Table*/}
+            <div className="relative bg-white border-2 border-red-500 shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl pt-2 pb-10 px-6 -mt-[1px] z-0 overflow-visible" style={{ minHeight: '400px', maxHeight: '400px'}}>
               {(() => {
                 const filteredInterns = interns.filter(
                   (intern) => intern.abbreviation === activeTab
@@ -286,10 +286,11 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                     </div>
                   );
                 }
-              
+                {/* Inner Content */}
                 return paginatedInterns.map((intern, index) => (
-                  <div key={index} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6">
-                    <div className="px-10px">
+                  <div key={index} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6 border-2 border-green-500">
+                    {/* Intern per line */}
+                    <div className="px-10px border-2 border-blue-500">
                       <p className="font-bold text-[#0D223D] text-left">{intern.name}</p>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <span className={`inline-block w-2 h-2 rounded-full ${intern.isActive ? "bg-green-500" : "bg-red-500"}`}></span>
@@ -298,8 +299,8 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                         <span className="ml-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px]">{intern.abbreviation}</span>
                       </div>
                     </div>
-                
-                    <div className="flex flex-col text-[14px] text-gray-600">
+                    {/* Shift name, time in, time out, time remain, total hours */}
+                    <div className="flex flex-col text-[14px] text-gray-600 border-2 border-yellow-500">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <Sun className="w-5 h-5 text-gray-600" />
@@ -316,8 +317,8 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                         <span>{intern.hours}</span>
                       </div>
                     </div>
-                
-                    <div className="flex gap-3 relative">
+                    {/* Download and Actions */}
+                    <div className="flex gap-3 relative border-2 border-violet-500">
                       <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600">
                         <Download className="w-8 h-8" strokeWidth={1} />
                       </button>
@@ -362,9 +363,10 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                 ));
               })()}
             </div>
+            {/* End Intern Table */}
           </div>
-          {/*page number */}
-          <div className="w-full flex justify-end mt-5">
+          {/* Pagination */}
+          <div className="w-full flex justify-end mt-5 border-2 border-pink-500">
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -480,66 +482,66 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
           {/* Edit Intern Modal */}
           {showEditModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-        <div className="bg-white p-6 rounded-xl w-full max-w-xl relative">
-          <h2 className="text-xl font-[650] mb-4 text-[#0D223D]">Edit Intern Details</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} required className="w-full border p-2 rounded" />
-            <div className="grid grid-cols-4 gap-2">
-              <div className="col-span-3">
-                <input type="text" name="schoolName" placeholder="School Name" value={formData.schoolName} onChange={handleChange} required className="w-full border p-2 rounded" />
-              </div>
-              <div className="col-span-1">
-                <input type="text" name="schoolAbbreviation" placeholder="Abbreviation" value={formData.schoolAbbreviation} onChange={handleChange} required className="w-full border p-2 rounded text-md" />
-              </div>
-            </div>
-            <select name="shift" value={formData.shift} onChange={handleChange} required className="w-full border p-2 rounded">
-              <option value="">Select Shift</option>
-              <option>Day Shift</option>
-              <option>Mid Shift</option>
-              <option>Night Shift</option>
-              <option>Graveyard Shift</option>
-            </select>
-            <div className="flex gap-2 text-gray-900">
-              <div className="flex-1">
-                <label className="block text-sm font-medium">Time In</label>
-                <input type="time" name="timeIn" value={formData.timeIn} onChange={handleChange} onBlur={handleTimeInBlur} min={timeInMin} max={timeInMax} required className="w-full border p-2 rounded text-gray-900" />
-              </div>
-              <div className="flex-1 text-gray-900">
-                <label className="block text-sm font-medium">Time Out</label>
-                <input type="time" name="timeOut" value={formData.timeOut} onChange={handleChange} onKeyDown={preventManualTimeInput} required className="w-full border p-2 rounded text-gray-900" />
-              </div>
-            </div>
-            <div className="flex gap-2 text-gray-900">
-              <div className="flex-1">
-                <input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder='Total Hours for Completion:'required className="w-full border p-2 rounded text-gray-900" />
-              </div>
-            <div className="flex gap-2 text-gray-900">
-              <div className="flex-1">
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  required
-                  className="w-full border p-2 rounded bg-white text-left"
-                >
-                  <option value="" disabled hidden>
-                    Select Status
-                  </option>
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
+            <div className="bg-white p-6 rounded-xl w-full max-w-xl relative">
+              <h2 className="text-xl font-[650] mb-4 text-[#0D223D]">Edit Intern Details</h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} required className="w-full border p-2 rounded" />
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="col-span-3">
+                    <input type="text" name="schoolName" placeholder="School Name" value={formData.schoolName} onChange={handleChange} required className="w-full border p-2 rounded" />
+                  </div>
+                  <div className="col-span-1">
+                    <input type="text" name="schoolAbbreviation" placeholder="Abbreviation" value={formData.schoolAbbreviation} onChange={handleChange} required className="w-full border p-2 rounded text-md" />
+                  </div>
+                </div>
+                <select name="shift" value={formData.shift} onChange={handleChange} required className="w-full border p-2 rounded">
+                  <option value="">Select Shift</option>
+                  <option>Day Shift</option>
+                  <option>Mid Shift</option>
+                  <option>Night Shift</option>
+                  <option>Graveyard Shift</option>
                 </select>
-              </div>
-              </div>
+                <div className="flex gap-2 text-gray-900">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium">Time In</label>
+                    <input type="time" name="timeIn" value={formData.timeIn} onChange={handleChange} onBlur={handleTimeInBlur} min={timeInMin} max={timeInMax} required className="w-full border p-2 rounded text-gray-900" />
+                  </div>
+                  <div className="flex-1 text-gray-900">
+                    <label className="block text-sm font-medium">Time Out</label>
+                    <input type="time" name="timeOut" value={formData.timeOut} onChange={handleChange} onKeyDown={preventManualTimeInput} required className="w-full border p-2 rounded text-gray-900" />
+                  </div>
+                </div>
+                <div className="flex gap-2 text-gray-900">
+                  <div className="flex-1">
+                    <input type="number" name="totalHours" value={formData.totalHours} onChange={handleChange} placeholder='Total Hours for Completion:'required className="w-full border p-2 rounded text-gray-900" />
+                  </div>
+                <div className="flex gap-2 text-gray-900">
+                  <div className="flex-1">
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleChange}
+                      required
+                      className="w-full border p-2 rounded bg-white text-left"
+                    >
+                      <option value="" disabled hidden>
+                        Select Status
+                      </option>
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <button type="button" onClick={() => setEditModal(false)} className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+                  <button type="submit" className="bg-[#25E2CC] text-white font-semibold px-4 py-2 rounded hover:bg-[#1eb5a3]">Save Changes</button>
+                </div>
+              </form>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button type="button" onClick={() => setEditModal(false)} className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
-              <button type="submit" className="bg-[#25E2CC] text-white font-semibold px-4 py-2 rounded hover:bg-[#1eb5a3]">Save Changes</button>
-            </div>
-          </form>
-        </div>
           </div>
           )}
         </div>
