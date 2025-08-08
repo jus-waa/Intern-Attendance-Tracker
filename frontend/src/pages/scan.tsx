@@ -131,7 +131,7 @@ const Scan: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen p-4 relative">
+    <div className="flex flex-col items-center p-4 relative">
       <div className="text-center mb-6">
         <p className="text-[#0D223D] text-2xl font-semibold mb-2">Scan Your QR Code</p>
         <p className="text-[#969696] text-xs font-[400]">Your attendance is automatically detected by the system</p>
