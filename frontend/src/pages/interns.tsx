@@ -1,8 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from "axios";
 import { useLocation } from 'react-router-dom';
 import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react";
 
-  const Interns: React.FC = () => {
+type Intern = {
+  intern_id: string;
+  intern_name: string;
+  abbreviation: string;
+  school_name: string;
+  shift_name: string;
+  time_in: string;
+  time_out: string;
+  total_hours: number;
+  time_remain: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+const Interns: React.FC = () => {
   const [showAddInternModal, setAddInternModal] = useState(false);
   const [showEditModal, setEditModal] = useState(false);
   const [activeTab, setActiveTab] = useState('CVSU');   
@@ -11,9 +27,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
   const activeMenuRef = useRef<HTMLDivElement | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null); 
-  
   const statusOptions = ['Active', 'Completed', 'Terminated'];  
-
   const [formData, setFormData] = useState({
     fullName: '',
     schoolName: '',
@@ -24,44 +38,21 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
     totalHours: '',
     status:'',
   });
-  interface Intern {
-    id: string;
-    name: string;
-    school: string;
-  }
-  const interns = [
-          {
-            id: "1",
-            name: "Juan Dela Cruz",
-            school: "Cavite State University - Main Campus",
-            abbreviation: "CVSU",
-            shift: "Day Shift",
-            time: "8 AM - 5 PM",
-            hours: "100/240 hours",
-            isActive: true,
-          },
-          {
-            id: "2",
-            name: "Maria Santos",
-            school: "Cavite State University - Main Campus",
-            abbreviation: "CVSU",
-            shift: "Night Shift",
-            time: "9 PM - 6 AM",
-            hours: "210/240 hours",
-            isActive: false,
-          },
-          {
-            id: "3",
-            name: "Maria Santos",
-            school: "Cavite State University - Main Campus",
-            abbreviation: "CVSU",
-            shift: "Night Shift",
-            time: "9 PM - 6 AM",
-            hours: "210/240 hours",
-            isActive: false,
-          },
-        ];
+  {/* API call for intern table */}
+  const [interns, setInterns] = useState<Intern[]>([])
+  useEffect(() => {
+    const fetchInterns = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/intern/list');
+        setInterns(response.data.result); // ✅ correctly extract 'result' array
+      } catch (error) {
+        console.error('Error fetching interns:', error);
+      }
+    };
 
+    fetchInterns();
+  }, []);
+  
   const location = useLocation();
   useEffect(() => {
     if (location.state?.openModal) {
@@ -209,7 +200,6 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [actionMenuIndex]);
-
   return (
     <div className="flex flex-col items-center min-h-screen px-4 relative">
       <div className="w-full max-w-6xl">
@@ -269,33 +259,18 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
               ))}
             </div>
             {/* Interns Table*/}
-            <div className="relative bg-white border-2 border-red-500 shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl pt-2 pb-10 px-6 -mt-[1px] z-0 overflow-visible" style={{ minHeight: '400px', maxHeight: '400px'}}>
+            <div className="relative bg-white border-2 border-red-500 shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl px-4 z-0 overflow-visible">
               {(() => {
-                const filteredInterns = interns.filter(
-                  (intern) => intern.abbreviation === activeTab
-                );
-              
-                const startIndex = (currentPage - 1) * itemsPerPage;
-                const endIndex = startIndex + itemsPerPage;
-                const paginatedInterns = filteredInterns.slice(startIndex, endIndex);
-              
-                if (filteredInterns.length === 0) {
-                  return (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-gray-300 text-lg font-normal p-5">No existing intern.</p>
-                    </div>
-                  );
-                }
                 {/* Inner Content */}
-                return paginatedInterns.map((intern, index) => (
-                  <div key={index} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6 border-2 border-green-500">
+                return interns.map((intern, index) => (
+                  <div key={intern.intern_id} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6 border-2 border-green-500">
                     {/* Intern per line */}
-                    <div className="px-10px border-2 border-blue-500">
-                      <p className="font-bold text-[#0D223D] text-left">{intern.name}</p>
+                    <div className="px-10 border-2 border-blue-500">
+                      <p className="font-bold text-[#0D223D] text-left">{intern.intern_name}</p>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span className={`inline-block w-2 h-2 rounded-full ${intern.isActive ? "bg-green-500" : "bg-red-500"}`}></span>
-                        <span>{intern.isActive ? "Active" : "Inactive"}</span>
-                        <span>| {intern.school}</span>
+                        <span className={"mt-0.5 w-2 h-2 rounded-full bg-green-500"}></span>
+                        <span>Active</span>
+                        <span>| {intern.school_name}</span>
                         <span className="ml-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px]">{intern.abbreviation}</span>
                       </div>
                     </div>
@@ -304,31 +279,31 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <Sun className="w-5 h-5 text-gray-600" />
-                          <span>{intern.shift}</span>
+                          <span>{intern.shift_name}</span>
                         </div>
                         <p>|</p>
                         <div className="flex items-center gap-1">
                           <CalendarDays className="w-5 h-5 text-gray-600" />
-                          <span>{intern.time}</span>
+                          <span>{intern.time_in} - {intern.time_out}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <Clock className="w-5 h-5 text-gray-600" />
-                        <span>{intern.hours}</span>
+                        <span>{intern.time_remain}/{intern.total_hours} hours</span>
                       </div>
                     </div>
                     {/* Download and Actions */}
                     <div className="flex gap-3 relative border-2 border-violet-500">
+                      {/* Download */}
                       <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600">
                         <Download className="w-8 h-8" strokeWidth={1} />
                       </button>
-                
+                      {/* Actions */}
                       <div className="relative">
                         <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600"
                           onClick={() => setActionMenuIndex(actionMenuIndex === index ? null : index)}>
                           <Ellipsis className="w-8 h-8" strokeWidth={1} />
-                
-                        {/*Action menu modal*/}
+                          {/*Action menu modal*/}
                           {actionMenuIndex === index && (
                             <div
                               ref={activeMenuRef} // Attach ref here
@@ -336,7 +311,7 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                             >
                               <button
                                 onClick={() => {setEditModal(true)
-                                  console.log("Edit intern:", intern.name); 
+                                  console.log("Edit intern:", intern.intern_name); 
                                   setActionMenuIndex(null);
                                 }}
                                 className="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -345,8 +320,8 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
                               </button>
                               <button
                                 onClick={() => {
-                                console.log("Delete intern:", intern.name);
-                                setSelectedIntern(intern);  // ✅ Save intern data
+                                console.log("Delete intern:", intern.intern_name);
+                                setSelectedIntern(intern); 
                                 setShowDeleteModal(true);  
                                 setActionMenuIndex(null);  
                               }}

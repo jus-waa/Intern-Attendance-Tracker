@@ -13,9 +13,9 @@ function App() {
           {/* Redirect / to /scan */}
           <Route index element={<Navigate to="scan" replace />} />
 
-          <Route path="scan" element={<Scan />} />
-          <Route path="interns" element={<Interns />} />
-          <Route path="history" element={<History />} />
+          <Route path="/scan" element={<Scan />} />
+          <Route path="/interns" element={<Interns />} />
+          <Route path="/history" element={<History />} />
         </Route>
       </Routes>
     </Router>
