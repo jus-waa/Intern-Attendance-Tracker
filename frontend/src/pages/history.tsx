@@ -1,6 +1,125 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Download, ChevronDown } from 'lucide-react';
 
+// Reusable Pagination Component
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  maxPagesToShow?: number;
+  className?: string;
+}
+
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+  maxPagesToShow = 5,
+  className = ""
+}) => {
+  const getPageNumbers = () => {
+    const pageNumbers: (number | string)[] = [];
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+
+      if (currentPage > 3) {
+        pageNumbers.push("...");
+      }
+
+      const startPage = Math.max(2, currentPage - 1);
+      const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pageNumbers.push("...");
+      }
+
+      pageNumbers.push(totalPages);
+    }
+
+    return pageNumbers;
+  };
+
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  };
+
+  const handlePageClick = (page: number) => {
+    onPageChange(page);
+  };
+
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <div className={`flex items-center space-x-1 ${className}`}>
+      <button
+        onClick={handlePrevious}
+        disabled={currentPage === 1}
+        className={`px-3 py-1 rounded border transition-colors ${
+          currentPage === 1 
+            ? 'text-gray-400 cursor-not-allowed bg-gray-50' 
+            : 'hover:bg-gray-200 text-gray-700 bg-white border-gray-300'
+        }`}
+      >
+        &lt;
+      </button>
+
+      {getPageNumbers().map((page, index) =>
+        typeof page === "number" ? (
+          <button
+            key={index}
+            onClick={() => handlePageClick(page)}
+            className={`px-3 py-1 rounded border transition-colors ${
+              currentPage === page
+                ? 'bg-[#25E2CC] text-white font-semibold border-[#25E2CC]'
+                : 'hover:bg-gray-200 text-gray-700 bg-white border-gray-300'
+            }`}
+          >
+            {page}
+          </button>
+        ) : (
+          <span 
+            key={index} 
+            className="px-2 text-gray-500 select-none"
+          >
+            ...
+          </span>
+        )
+      )}
+
+      <button
+        onClick={handleNext}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-1 rounded border transition-colors ${
+          currentPage === totalPages 
+            ? 'text-gray-400 cursor-not-allowed bg-gray-50' 
+            : 'hover:bg-gray-200 text-gray-700 bg-white border-gray-300'
+        }`}
+      >
+        &gt;
+      </button>
+    </div>
+  );
+};
+
 interface InternData {
   id: string;
   name: string;
@@ -20,49 +139,141 @@ const InternHistoryPage: React.FC = () => {
   const itemsPerPage = 10;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sample data with university field and total completed hours
-  const internData: InternData[] = [
+  // Sample data with university field and total completed hours - auto-generate IDs
+  const baseInternData = [
     {
-      id: '1',
       name: 'Pukerat',
       wdId: '123456789',
-      shiftSchedule: 'Morning Shift',
+      shiftSchedule: 'Morning Shift' as const,
       coordinator: 'Angelo Fuentes',
-      status: 'Complete',
+      status: 'Complete' as const,
       university: 'CSU',
       totalCompletedHours: 480
     },
     {
-      id: '2',
       name: 'JUAN DELA CRUZ',
       wdId: '123456789',
-      shiftSchedule: 'Mid Shift',
+      shiftSchedule: 'Mid Shift' as const,
       coordinator: 'Angelo Fuentes',
-      status: 'Complete',
+      status: 'Complete' as const,
       university: 'CSU',
       totalCompletedHours: 520
     },
     {
-      id: '3',
       name: 'JUAN DELA CRUZ',
       wdId: '123456789',
-      shiftSchedule: 'Graveyard Shift',
+      shiftSchedule: 'Graveyard Shift' as const,
       coordinator: 'Angelo Fuentes',
-      status: 'Incomplete',
+      status: 'Incomplete' as const,
       university: 'CSU',
       totalCompletedHours: 320
     },
     {
-      id: '4',
       name: 'JUAN DELA CRUZ',
       wdId: '123456789',
-      shiftSchedule: 'Morning Shift',
+      shiftSchedule: 'Morning Shift' as const,
       coordinator: 'Angelo Fuentes',
-      status: 'Complete',
+      status: 'Complete' as const,
       university: 'CSU',
       totalCompletedHours: 500
+    },
+    {
+      name: 'Maria Santos',
+      wdId: '987654321',
+      shiftSchedule: 'Mid Shift' as const,
+      coordinator: 'Sarah Johnson',
+      status: 'Ongoing' as const,
+      university: 'UP',
+      totalCompletedHours: 240
+    },
+    {
+      name: 'Robert Chen',
+      wdId: '456789123',
+      shiftSchedule: 'Graveyard Shift' as const,
+      coordinator: 'Mark Davis',
+      status: 'Complete' as const,
+      university: 'UST',
+      totalCompletedHours: 450
+    },
+    {
+      name: 'Ana Rodriguez',
+      wdId: '789123456',
+      shiftSchedule: 'Morning Shift' as const,
+      coordinator: 'Lisa Thompson',
+      status: 'Incomplete' as const,
+      university: 'DLSU',
+      totalCompletedHours: 180
+    },
+    {
+      name: 'Michael Torres',
+      wdId: '321654987',
+      shiftSchedule: 'Mid Shift' as const,
+      coordinator: 'Angelo Fuentes',
+      status: 'Complete' as const,
+      university: 'ADMU',
+      totalCompletedHours: 510
+    },
+    {
+      name: 'Jennifer Kim',
+      wdId: '654987321',
+      shiftSchedule: 'Graveyard Shift' as const,
+      coordinator: 'Sarah Johnson',
+      status: 'Ongoing' as const,
+      university: 'FEU',
+      totalCompletedHours: 360
+    },
+    {
+      name: 'Carlos Mendoza',
+      wdId: '147258369',
+      shiftSchedule: 'Morning Shift' as const,
+      coordinator: 'Mark Davis',
+      status: 'Complete' as const,
+      university: 'CSU',
+      totalCompletedHours: 490
+    },
+    {
+      name: 'Sophia Williams',
+      wdId: '963852741',
+      shiftSchedule: 'Mid Shift' as const,
+      coordinator: 'Lisa Thompson',
+      status: 'Incomplete' as const,
+      university: 'UP',
+      totalCompletedHours: 280
+    },
+    {
+      name: 'David Park',
+      wdId: '258147963',
+      shiftSchedule: 'Graveyard Shift' as const,
+      coordinator: 'Angelo Fuentes',
+      status: 'Ongoing' as const,
+      university: 'UST',
+      totalCompletedHours: 340
+    },
+    {
+      name: 'Isabella Garcia',
+      wdId: '741963852',
+      shiftSchedule: 'Morning Shift' as const,
+      coordinator: 'Sarah Johnson',
+      status: 'Complete' as const,
+      university: 'DLSU',
+      totalCompletedHours: 475
+    },
+    {
+      name: 'James Wilson',
+      wdId: '852369741',
+      shiftSchedule: 'Mid Shift' as const,
+      coordinator: 'Mark Davis',
+      status: 'Complete' as const,
+      university: 'ADMU',
+      totalCompletedHours: 530
     }
   ];
+
+  // Auto-generate IDs
+  const internData: InternData[] = baseInternData.map((intern, index) => ({
+    ...intern,
+    id: (index + 1).toString()
+  }));
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -108,11 +319,17 @@ const InternHistoryPage: React.FC = () => {
     return filtered;
   }, [searchTerm, sortBy]);
 
-  // Pagination
+  // Pagination with display numbers
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Add display numbers for current page
+  const paginatedDataWithDisplayNumbers = paginatedData.map((intern, index) => ({
+    ...intern,
+    displayNumber: startIndex + index + 1
+  }));
 
   const getPageNumbers = () => {
     const pageNumbers: (number | string)[] = [];
@@ -148,11 +365,11 @@ const InternHistoryPage: React.FC = () => {
 
   // Export functions
   const exportToCSV = () => {
-    const headers = ['Name', 'University', 'WD ID', 'Shift Schedule', 'Total Completed Hours', 'Coordinator', 'Status'];
+    const headers = ['ID', 'Name', 'University', 'Shift Schedule', 'Completed Hours', 'Status'];
     const csvContent = [
       headers.join(','),
       ...filteredData.map(row => 
-        [row.name, row.university, row.wdId, row.shiftSchedule, row.totalCompletedHours, row.coordinator, row.status].join(',')
+        [row.id, row.name, row.university, row.shiftSchedule, row.totalCompletedHours, row.status].join(',')
       )
     ].join('\n');
 
@@ -192,24 +409,22 @@ const InternHistoryPage: React.FC = () => {
           <table>
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Name</th>
                 <th>University</th>
-                <th>WD ID</th>
                 <th>Shift Schedule</th>
-                <th>Total Completed Hours</th>
-                <th>Coordinator</th>
+                <th>Completed Hours</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
               ${filteredData.map(row => `
                 <tr>
+                  <td>${row.id}</td>
                   <td>${row.name}</td>
                   <td>${row.university}</td>
-                  <td>${row.wdId}</td>
                   <td>${row.shiftSchedule}</td>
                   <td>${row.totalCompletedHours}</td>
-                  <td>${row.coordinator}</td>
                   <td>${row.status}</td>
                 </tr>
               `).join('')}
@@ -229,11 +444,11 @@ const InternHistoryPage: React.FC = () => {
 
   const exportToExcel = () => {
     // Create a simple Excel-compatible format (CSV with .xlsx extension)
-    const headers = ['Name', 'University', 'WD ID', 'Shift Schedule', 'Total Completed Hours', 'Coordinator', 'Status'];
+    const headers = ['ID', 'Name', 'University', 'Shift Schedule', 'Completed Hours', 'Status'];
     const csvContent = [
       headers.join('\t'),
       ...filteredData.map(row => 
-        [row.name, row.university, row.wdId, row.shiftSchedule, row.totalCompletedHours, row.coordinator, row.status].join('\t')
+        [row.id, row.name, row.university, row.shiftSchedule, row.totalCompletedHours, row.status].join('\t')
       )
     ].join('\n');
 
@@ -393,28 +608,24 @@ const InternHistoryPage: React.FC = () => {
               <tr className="border-b border-gray-200">
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">University</th>
-              
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Shift Schedule</th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Hours</th>
-
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">University</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift Schedule</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Hours</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedData.length > 0 ? (
-                paginatedData.map((intern, index) => (
-                  <tr key={intern.id} className={`hover:bg-gray-50 ${index !== paginatedData.length - 1 ? 'border-b border-gray-200' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">{intern.id}</td>
+              {paginatedDataWithDisplayNumbers.length > 0 ? (
+                paginatedDataWithDisplayNumbers.map((intern, index) => (
+                  <tr key={intern.id} className={`hover:bg-gray-50 ${index !== paginatedDataWithDisplayNumbers.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">{intern.displayNumber}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">{intern.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 whitespace-nowrap text-left">
                       <span className="px-2 py-1 text-xs text-green-700 bg-green-100 rounded">{intern.university}</span>
                     </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{intern.shiftSchedule}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{intern.totalCompletedHours} hrs</td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">{intern.shiftSchedule}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">{intern.totalCompletedHours} hrs</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-left">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white ${getStatusColor(intern.status)}`}>
                         {intern.status}
                       </span>
@@ -423,7 +634,7 @@ const InternHistoryPage: React.FC = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="text-gray-500">
                       <p className="text-lg font-medium">No entries found</p>
                       <p className="text-sm mt-1">There are no intern records on this page.</p>
@@ -433,14 +644,14 @@ const InternHistoryPage: React.FC = () => {
               )}
             </tbody>
           </table>
-          
-          
         </div>
         {/* Pagination */}
           <div className="w-full flex justify-end mt-5 px-6 pb-4">
-            <div className="flex items-center space-x-1">
-              {renderPaginationButtons()}
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
       </div>
     </div>

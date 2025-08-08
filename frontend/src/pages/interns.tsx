@@ -25,11 +25,13 @@ import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react
     totalHours: '',
     status:'',
   });
-interface Intern {
-  id: string;
-  name: string;
-  school: string;
-}
+
+  interface Intern {
+    id: string;
+    name: string;
+    school: string;
+  }
+  
   const interns = [
           {
             id: "1",
