@@ -4,6 +4,7 @@ import './App.css'
 import Layout from './components/layout.tsx'
 import Scan from './pages/scan.tsx'
 import Interns from './pages/interns.tsx'
+import History from './pages/history.tsx'
 
 
 /*
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Scan />} />
           <Route path="interns" element={<Interns />} />
+          <Route path="history" element={<History />} />
           
         </Route>
       </Routes>
