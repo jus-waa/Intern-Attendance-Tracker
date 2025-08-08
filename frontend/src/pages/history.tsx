@@ -1,124 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Download, ChevronDown } from 'lucide-react';
-
-// Reusable Pagination Component
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  maxPagesToShow?: number;
-  className?: string;
-}
-
-const Pagination: React.FC<PaginationProps> = ({
-  currentPage,
-  totalPages,
-  onPageChange,
-  maxPagesToShow = 5,
-  className = ""
-}) => {
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      pageNumbers.push(1);
-
-      if (currentPage > 3) {
-        pageNumbers.push("...");
-      }
-
-      const startPage = Math.max(2, currentPage - 1);
-      const endPage = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-
-      if (currentPage < totalPages - 2) {
-        pageNumbers.push("...");
-      }
-
-      pageNumbers.push(totalPages);
-    }
-
-    return pageNumbers;
-  };
-
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      onPageChange(currentPage - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      onPageChange(currentPage + 1);
-    }
-  };
-
-  const handlePageClick = (page: number) => {
-    onPageChange(page);
-  };
-
-  if (totalPages <= 1) {
-    return null;
-  }
-
-  return (
-    <div className={`flex items-center space-x-1 ${className}`}>
-      <button
-        onClick={handlePrevious}
-        disabled={currentPage === 1}
-        className={`px-3 py-1 rounded border transition-colors ${
-          currentPage === 1 
-            ? 'text-gray-400 cursor-not-allowed bg-gray-50' 
-            : 'hover:bg-gray-200 text-gray-700 bg-white border-gray-300'
-        }`}
-      >
-        &lt;
-      </button>
-
-      {getPageNumbers().map((page, index) =>
-        typeof page === "number" ? (
-          <button
-            key={index}
-            onClick={() => handlePageClick(page)}
-            className={`px-3 py-1 rounded border transition-colors ${
-              currentPage === page
-                ? 'bg-[#25E2CC] text-white font-semibold border-[#25E2CC]'
-                : 'hover:bg-gray-200 text-gray-700 bg-white border-gray-300'
-            }`}
-          >
-            {page}
-          </button>
-        ) : (
-          <span 
-            key={index} 
-            className="px-2 text-gray-500 select-none"
-          >
-            ...
-          </span>
-        )
-      )}
-
-      <button
-        onClick={handleNext}
-        disabled={currentPage === totalPages}
-        className={`px-3 py-1 rounded border transition-colors ${
-          currentPage === totalPages 
-            ? 'text-gray-400 cursor-not-allowed bg-gray-50' 
-            : 'hover:bg-gray-200 text-gray-700 bg-white border-gray-300'
-        }`}
-      >
-        &gt;
-      </button>
-    </div>
-  );
-};
+import { Download, ChevronDown } from 'lucide-react';
+import Pagination from '../components/pagination';
+import SearchComponent from '../components/search';
 
 interface InternData {
   id: string;
@@ -126,7 +9,7 @@ interface InternData {
   wdId: string;
   shiftSchedule: 'Morning Shift' | 'Mid Shift' | 'Graveyard Shift';
   coordinator: string;
-  status: 'Complete' | 'Incomplete' | 'Ongoing';
+  status: 'Complete' | 'Incomplete';
   university: string;
   totalCompletedHours: number;
 }
@@ -182,7 +65,7 @@ const InternHistoryPage: React.FC = () => {
       wdId: '987654321',
       shiftSchedule: 'Mid Shift' as const,
       coordinator: 'Sarah Johnson',
-      status: 'Ongoing' as const,
+      status: 'Complete' as const,
       university: 'UP',
       totalCompletedHours: 240
     },
@@ -218,7 +101,7 @@ const InternHistoryPage: React.FC = () => {
       wdId: '654987321',
       shiftSchedule: 'Graveyard Shift' as const,
       coordinator: 'Sarah Johnson',
-      status: 'Ongoing' as const,
+      status: 'Complete' as const,
       university: 'FEU',
       totalCompletedHours: 360
     },
@@ -245,7 +128,7 @@ const InternHistoryPage: React.FC = () => {
       wdId: '258147963',
       shiftSchedule: 'Graveyard Shift' as const,
       coordinator: 'Angelo Fuentes',
-      status: 'Ongoing' as const,
+      status: 'Complete' as const,
       university: 'UST',
       totalCompletedHours: 340
     },
@@ -317,51 +200,13 @@ const InternHistoryPage: React.FC = () => {
     });
 
     return filtered;
-  }, [searchTerm, sortBy]);
+  }, [searchTerm, sortBy, internData]);
 
-  // Pagination with display numbers
+  // Pagination calculations
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
-
-  // Add display numbers for current page
-  const paginatedDataWithDisplayNumbers = paginatedData.map((intern, index) => ({
-    ...intern,
-    displayNumber: startIndex + index + 1
-  }));
-
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      pageNumbers.push(1);
-
-      if (currentPage > 3) {
-        pageNumbers.push("...");
-      }
-
-      const startPage = Math.max(2, currentPage - 1);
-      const endPage = Math.min(totalPages - 1, currentPage + 1);
-
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-
-      if (currentPage < totalPages - 2) {
-        pageNumbers.push("...");
-      }
-
-      pageNumbers.push(totalPages);
-    }
-
-    return pageNumbers;
-  };
 
   // Export functions
   const exportToCSV = () => {
@@ -476,57 +321,9 @@ const InternHistoryPage: React.FC = () => {
         return 'bg-green-500';
       case 'Incomplete':
         return 'bg-red-500';
-      case 'Ongoing':
-        return 'bg-blue-500';
-      default:
+        default:
         return 'bg-gray-500';
     }
-  };
-
-  const renderPaginationButtons = () => {
-    return (
-      <>
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className={`px-3 py-1 rounded border ${
-            currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-200'
-          }`}
-        >
-          &lt;
-        </button>
-
-        {getPageNumbers().map((page, index) =>
-          typeof page === "number" ? (
-            <button
-              key={index}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded border ${
-                currentPage === page
-                  ? 'bg-[#25E2CC] text-white font-semibold'
-                  : 'hover:bg-gray-200'
-              }`}
-            >
-              {page}
-            </button>
-          ) : (
-            <span key={index} className="px-2 text-gray-500 select-none">
-              ...
-            </span>
-          )
-        )}
-
-        <button
-          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className={`px-3 py-1 rounded border ${
-            currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-200'
-          }`}
-        >
-          &gt;
-        </button>
-      </>
-    );
   };
 
   return (
@@ -534,26 +331,20 @@ const InternHistoryPage: React.FC = () => {
       {/* Main Content */}
       <div className="flex flex-col">
         {/* Header */}
-        <div className="bg-white px-6 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-semibold text-gray-800 mb-2">Intern History</h1>
-            <p className="text-sm text-gray-500">Track your list of previous interns</p>
-          </div>
-        </div>
+        <div className="text-center mb-6">
+        <p className="text-[#0D223D] text-4xl font-semibold mb-1">Intern History</p>
+        <p className="text-[#969696] text-sm font-[400]">Track your previous interns’ information</p>
+    </div>
 
         {/* Search and Controls */}
         <div className="bg-white px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 pr-4 py-3 border border-gray-200 rounded-3xl focus:ring-2 focus:ring-teal-500 focus:border-transparent w-80 shadow-lg"
-              />
-            </div>
+            <SearchComponent
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              placeholder="Search..."
+              width="w-80"
+            />
             
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -561,7 +352,7 @@ const InternHistoryPage: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-md"
+                  className="border  border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-md"
                 >
                   <option value="University">University</option>
                   <option value="Name">Name</option>
@@ -573,11 +364,11 @@ const InternHistoryPage: React.FC = () => {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={handleExportClick}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-2xl flex items-center space-x-2 transition-colors shadow-lg"
+                 className="bg-[#25E2CC] text-white px-6 py-2 rounded-xl font-semibold hover:bg-[#1eb5a3] flex items-center gap-2"
                 >
-                  <Download size={16} />
+                  <Download size={14} />
                   <span>Export</span>
-                  <ChevronDown size={16} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={16} className={  `transition-transform  ${isDropdownOpen  ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {isDropdownOpen && (
@@ -615,10 +406,10 @@ const InternHistoryPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {paginatedDataWithDisplayNumbers.length > 0 ? (
-                paginatedDataWithDisplayNumbers.map((intern, index) => (
-                  <tr key={intern.id} className={`hover:bg-gray-50 ${index !== paginatedDataWithDisplayNumbers.length - 1 ? 'border-b border-gray-200' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">{intern.displayNumber}</td>
+              {paginatedData.length > 0 ? (
+                paginatedData.map((intern, index) => (
+                  <tr key={intern.id} className={`hover:bg-gray-50 ${index !== paginatedData.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-left">{startIndex + index + 1}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">{intern.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-left">
                       <span className="px-2 py-1 text-xs text-green-700 bg-green-100 rounded">{intern.university}</span>
@@ -645,14 +436,19 @@ const InternHistoryPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
         {/* Pagination */}
-          <div className="w-full flex justify-end mt-5 px-6 pb-4">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
+        <div className="mx-6 mb-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            startIndex={startIndex}
+            endIndex={Math.min(endIndex, filteredData.length)}
+            totalEntries={filteredData.length}
+            itemsPerPage={itemsPerPage}
+          />
+        </div>
       </div>
     </div>
   );
