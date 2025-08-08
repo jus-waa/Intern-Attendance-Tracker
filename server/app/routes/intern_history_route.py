@@ -3,16 +3,17 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List, Dict
 from collections import defaultdict
-
 from app.utils.db import get_db
 from app.schemas.intern_history_schema import InternHistorySchema, ResInternHistory, ReqTransferInternHistory
 from app.crud import intern_history
+from app.utils.helper import convert_total_hours
 
 router = APIRouter()
 
 @router.get("/list")
 async def getAll(session: Session = Depends(get_db)):
     result = intern_history.getAllInternHistory(session)
+    result = convert_total_hours(result)
     return ResInternHistory(
         code="200",
         status="Ok",
@@ -20,21 +21,11 @@ async def getAll(session: Session = Depends(get_db)):
         result=result
     ).model_dump(exclude_none=True)
 
-
-@router.get("/{intern_id}", response_model=ResInternHistory[InternHistorySchema])
-async def getById(intern_id: UUID, session: Session = Depends(get_db)):
-    result = intern_history.getInternHistoryById(session, intern_id)
-    return ResInternHistory(
-        code="200",
-        status="Ok",
-        message="Intern history fetched successfully.",
-        result=result
-    ).model_dump(exclude_none=True)
-
 #get all intern histories for a given school
 @router.get("/school/{abbreviation}")
 async def getBySchool(abbreviation: str, session: Session = Depends(get_db)):
     result = intern_history.getInternHistoryBySchool(session, abbreviation)
+    result = convert_total_hours(result)
     return ResInternHistory(
         code="200",
         status="Ok",

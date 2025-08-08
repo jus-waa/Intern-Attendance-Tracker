@@ -1,7 +1,8 @@
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from datetime import date, time, timedelta, datetime
+from app.crud import intern_history
 from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
 from app.schemas.attendance_schema import ReqUpdateAttendance
@@ -23,9 +24,10 @@ def getAttendanceById(session:Session, intern_id: UUID):
     return _attendance
 
 def getBySchool(session:Session, abbreviation: str, skip:int = 0, limit:int = 100):
-    _attendance = (session.query(Attendance, Intern)
-        .join(Attendance.intern)
+    _attendance = (session.query(Attendance)
+        .join(Intern, Attendance.intern_id == Intern.intern_id)
         .filter(Intern.abbreviation == abbreviation)
+        .options(joinedload(Attendance.intern))
         .offset(skip)
         .limit(limit)
         .all()
@@ -35,20 +37,37 @@ def getBySchool(session:Session, abbreviation: str, skip:int = 0, limit:int = 10
     
     response = []
     
-    for attendance, intern in _attendance: 
+    for record in _attendance:
+        intern = record.intern
         response.append({
-            "attendance_id": attendance.attendance_id,
-            "intern_id": attendance.intern_id,
-            "attendance_date": attendance.attendance_date,
-            "time_in": attendance.time_in,
-            "time_out": attendance.time_out,
-            "total_hours": attendance.total_hours if attendance.total_hours is not None else 0,
-            "check_in": attendance.check_in,
-            "remarks": attendance.remarks,
-            "updated_at": attendance.updated_at,
-            "abbreviation": intern.abbreviation,
+            "attendance_id": record.attendance_id,
+            "intern_id": record.intern_id,
+            "attendance_date": record.attendance_date,
+            "time_in": record.time_in,
+            "time_out": record.time_out,
+            "total_hours": record.total_hours if record.total_hours else 0,
+            "check_in": record.check_in,
+            "remarks": record.remarks,
+            "updated_at": record.updated_at,
+            "abbreviation": intern.abbreviation if intern else None,
         })
-    
+        #auto complete intern if time_remain is 0
+        if intern and intern.time_remain == 0 and intern.status != "Completed":
+            intern.status = "Completed"
+            session.add(intern)
+
+    session.commit()
+    try:
+        result = intern_history.transferSchoolToHistory(session, abbreviation)
+        print(result["message"])
+    except HTTPException as e: 
+        if e.status_code == 400:
+            #if all are still not finished skip
+            print(f"Auto-transfer skipped: {e.detail}")
+        else:
+            #error
+            print(f"Error during auto-transfer: {e.detail}")
+        
     return {
         "code": 200,
         "status": "Ok",
