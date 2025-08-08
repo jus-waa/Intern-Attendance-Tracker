@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from app.scheduler import start_scheduler
+from app.auto_timeout import auto_timeout
 from app.utils.db import engine
 from app.models import intern_model
 from app.routes import intern_route, attendance_route
@@ -12,9 +14,14 @@ intern_model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-@app.get("/")       
-async def Home():   
-    return "Hello World"
+@app.on_event("startup")
+def startup_event():
+    start_scheduler()
+    auto_timeout()
+
+@app.get("/")
+def root():
+    return {"message": "Attendance system running."}
 
 app.mount("/qrcodes", StaticFiles(directory="qrcodes"), name="qrcodes")
 app.include_router(intern_route.router, prefix="/intern", tags=["intern"])

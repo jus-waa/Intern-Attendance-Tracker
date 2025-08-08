@@ -40,7 +40,6 @@ async def scanQRAttendance():
 @router.get("/timesheet/{abbreviation}")
 async def getAllBySchool(abbreviation:str, session:Session=Depends(get_db)):
     _attendance = attendance.getBySchool(session, abbreviation, 0, 100)
-    _attendance = convert_total_hours(_attendance)
     return ResAttendance(code="200",
                          status="Ok",
                          message=f"Intern from {abbreviation} fetched successfully.",
@@ -75,7 +74,6 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
 
     _attendance = attendance.updateAttendance(session,
                                             intern_id=request.intern_id,
-                                            check_in=request.check_in,
                                             remarks=request.remarks,
                                             total_hours=total_hours
                                             )

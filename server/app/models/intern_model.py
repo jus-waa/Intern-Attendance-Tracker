@@ -21,7 +21,7 @@ class Intern(Base):
     updated_at=Column(TIMESTAMP(timezone=True), server_default=text('now()')) 
 
     #defining relationship to attendance_model
-    attendances =  relationship("Attendance", back_populates="intern")
+    attendances =  relationship("Attendance", back_populates="intern", cascade="all, delete",passive_deletes=True)
 #used for debugging
 def __repr__(self):
     return f"<Intern(intern_id={self.intern.id}, intern_name={self.intern.name})>"

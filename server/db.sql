@@ -63,48 +63,15 @@ DROP TABLE attendance;
 /* Intern_History Table*/
 CREATE TABLE intern_history (
     intern_id UUID PRIMARY KEY,
-    intern_name VARCHAR(255) NOT NULL,
-    school_name VARCHAR(255) NOT NULL,
-    coordinator_name VARCHAR(255),
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    required_hours INT,
-    total_required_hours INT,
-    status VARCHAR(50)
+    intern_name VARCHAR(255),
+    school_name VARCHAR(255),
+    abbreviation VARCHAR(255),
+    shift_name VARCHAR(255),
+    total_hours INTERVAL,
+    status VARCHAR(255)
 );
 
+SELECT * FROM intern_history;
 
--- Sample Data for Intern Table
---Completed Interns
-INSERT INTO intern (
-    intern_name, school_name, shift_name,
-    start_date, end_date, time_in, time_out,
-    total_hours, time_remain, status
-) VALUES 
-('Ana Cruz', 'Don Bosco Technical College', 'Morning Shift',
- '2025-06-01', '2025-08-01', '08:00', '16:00',
- INTERVAL '320 hours', 0, 'Completed'),
- 
-('Ben Santos', 'Don Bosco Technical College', 'Morning Shift',
- '2025-06-01', '2025-08-01', '08:00', '16:00',
- INTERVAL '320 hours', 0, 'Completed');
+DROP TABLE intern_history;
 
---Terminated Intern
-INSERT INTO intern (
-    intern_name, school_name, shift_name,
-    start_date, end_date, time_in, time_out,
-    total_hours, time_remain, status
-) VALUES 
-('Cathy Lopez', 'Don Bosco Technical College', 'Morning Shift',
- '2025-06-01', '2025-08-01', '08:00', '16:00',
- INTERVAL '320 hours', 100, 'Terminated');
-
--- Active Intern (to be checked out)
-INSERT INTO intern (
-    intern_name, school_name, shift_name,
-    start_date, end_date, time_in, time_out,
-    total_hours, time_remain, status
-) VALUES 
-('David Lim', 'Don Bosco Technical College', 'Morning Shift',
- '2025-06-01', '2025-08-01', '08:00', '16:00',
- INTERVAL '320 hours', 8, 'Active');
