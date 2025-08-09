@@ -535,4 +535,7 @@ const InternHistoryPage: React.FC = () => {
 };
 
 export default InternHistoryPage;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 38885018cf0bac09be388d1e76e600da7a78fc60
