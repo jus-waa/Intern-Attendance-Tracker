@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Download, ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
 import SearchComponent from "../components/search";
-
+import ExportButton from "../components/exportbutton";
 interface InternData {
   id: string;
   name: string;
@@ -402,19 +402,27 @@ const InternHistoryPage: React.FC = () => {
               </div>
 
               <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={handleExportClick}
-                  className="bg-[#25E2CC] text-white px-6 py-2 rounded-xl font-semibold hover:bg-[#1eb5a3] flex items-center gap-2"
-                >
-                  <Download size={14} />
-                  <span>Export</span>
-                  <ChevronDown
-                    size={16}
-                    className={`transition-transform  ${
-                      isDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                <ExportButton
+                  data={filteredData}
+                  headers={[
+                    "ID",
+                    "Name",
+                    "University", 
+                    "Shift Schedule",
+                    "Completed Hours",
+                    "Status"
+                  ]}
+                  filename="intern_history"
+                  title="Intern History Report"
+                  formatRowData={(row) => [
+                    row.id,
+                    row.name,
+                    row.university,
+                    row.shiftSchedule,
+                    row.totalCompletedHours,
+                    row.status
+                  ]}
+                />
 
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-2xl shadow-lg z-10 overflow-hidden">
@@ -535,7 +543,3 @@ const InternHistoryPage: React.FC = () => {
 };
 
 export default InternHistoryPage;
-<<<<<<< HEAD
-
-=======
->>>>>>> 38885018cf0bac09be388d1e76e600da7a78fc60
