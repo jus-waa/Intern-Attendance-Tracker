@@ -80,12 +80,14 @@ const Interns: React.FC = () => {
   // Handle Add Intern
   const [response, setResponse] = useState<{ uuid: string; qr_code_path: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hoursInput, setHoursInput] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     if (name === "total_hours") {
-      const hours = parseInt(value);
+      setHoursInput(value); // keep raw input for the number field
+      const hours = parseInt(value || "0", 10);
       const formatted = `${hours.toString().padStart(2, "0")}:00:00`;
     
       setFormData({
@@ -118,12 +120,11 @@ const Interns: React.FC = () => {
 
     try {
       const res = await axios.post("http://127.0.0.1:8000/intern/register", formData);
-      console.log("Response: ", res.data);
+      setResponse(res.data)
       window.location.reload();
       //setResponse(res.data.result);
     } catch (err: any) {
-      console.error("Error", err.response?.data || err.message);
-      //setError(err.response?.data?.detail || "Registration failed.");
+      setError(err.response?.data?.detail || "Registration failed.");
     }
   };
   const convertHoursToHHMMSS = (hours: number): string => {
@@ -227,7 +228,7 @@ const Interns: React.FC = () => {
         </div>
         <div className="py-4">
           {/*Search and Add button*/}
-          <div className="w-full flex justify-end items-center gap-2 mb-1 text-sm border-2 border-violet-500">
+          <div className="w-full flex justify-end items-center gap-2 mb-1 text-sm">
             {/*Search*/}
             <div className="relative">
               <input
@@ -276,11 +277,13 @@ const Interns: React.FC = () => {
               ))}
             </div>
             {/* Interns Table*/}
-            <div className="relative bg-white border-2 border-red-500 shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl px-4 z-0 overflow-visible">
+            <div className="relative bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-tl-none rounded-2xl px-4 z-0 overflow-visible p-4">
               {(() => {
+                // filter intern
                 const filteredInterns = interns.filter(
                   (intern) => intern.abbreviation === "CvSU"
                 );
+                // filter if no data
                 if (filteredInterns.length === 0) {
                   return (
                     <div className="flex items-center justify-center h-full">
@@ -288,11 +291,16 @@ const Interns: React.FC = () => {
                     </div>
                   );
                 }
+                // pagination slice
+                const itemsPerPage = 5; // adjust this as needed
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const paginatedInterns = filteredInterns.slice(startIndex, endIndex);
                 {/* Inner Content */}
-                return interns.map((intern, index) => (
-                  <div key={intern.intern_id} className="mt-4 flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 mb-4 px-6 border-2 border-green-500">
+                return paginatedInterns.map((intern, index) => (
+                  <div key={intern.intern_id} className="flex justify-between items-center bg-white shadow-[0_2px_8px_rgba(0,0,0,0.1)] rounded-lg p-4 m-4 px-6 border-2">
                     {/* Intern per line */}
-                    <div className="px-10 border-2 border-blue-500">
+                    <div className="px-10">
                       <p className="font-bold text-[#0D223D] text-left">{intern.intern_name}</p>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <span className={"mt-0.5 w-2 h-2 rounded-full bg-green-500"}></span>
@@ -302,7 +310,7 @@ const Interns: React.FC = () => {
                       </div>
                     </div>
                     {/* Shift name, time in, time out, time remain, total hours */}
-                    <div className="flex flex-col text-[14px] text-gray-600 border-2 border-yellow-500">
+                    <div className="flex flex-col text-[14px] text-gray-600">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <Sun className="w-5 h-5 text-gray-600" />
@@ -320,7 +328,7 @@ const Interns: React.FC = () => {
                       </div>
                     </div>
                     {/* Download and Actions */}
-                    <div className="flex gap-3 relative border-2 border-violet-500">
+                    <div className="flex gap-3">
                       {/* Download */}
                       <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600">
                         <Download className="w-8 h-8" strokeWidth={1} />
@@ -368,7 +376,7 @@ const Interns: React.FC = () => {
           </div>
           {/* End Intern Table */}
           {/* Pagination */}
-          <div className="w-full flex justify-end mt-5 border-2 border-pink-500">
+          <div className="w-full flex justify-end mt-5">
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -448,7 +456,7 @@ const Interns: React.FC = () => {
                   </div>
                 </div>
                 {/* Total Hours */}
-                <input type="number" name="total_hours" placeholder="Total Hours for Completion" value={formData.total_hours} onChange={handleChange} required className="w-full border p-2 rounded" />
+                <input type="number" name="total_hours" placeholder="Total Hours for Completion" value={hoursInput} onChange={handleChange} required className="w-full border p-2 rounded" />
                 {/* Status (auto Active so its hidden) */}
                 <input type="text" name="status" placeholder="Status" value="Active" onChange={handleChange} hidden className="w-full border p-2 rounded" />
                 {/* Submit and Cancel */}
