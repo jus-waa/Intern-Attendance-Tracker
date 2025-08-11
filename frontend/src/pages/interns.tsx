@@ -33,7 +33,7 @@ type InternEdit = {
 const Interns: React.FC = () => {
   const [showAddInternModal, setAddInternModal] = useState(false);
   const [showEditModal, setEditModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('CVSU');   
+  const [activeTab, setActiveTab] = useState<string>("");   
   const [currentPage, setCurrentPage] = useState(1);  
   const [actionMenuIndex, setActionMenuIndex] = useState<number | null>(null);  
   const activeMenuRef = useRef<HTMLDivElement | null>(null);
@@ -41,7 +41,6 @@ const Interns: React.FC = () => {
   const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
   const [loading, setLoading] = useState(false); 
   const statusOptions = ['Active', 'Completed', 'Terminated'];
-  const schools = ['CVSU', 'LSPU', 'NTC'];
 
   // form data for adding intern
   const [formData, setFormData] = useState<InternEdit>({
@@ -56,6 +55,7 @@ const Interns: React.FC = () => {
     time_remain: '',
     status: "Active",
   });
+
   //time_remain = total_hours
   useEffect(() => {
   setFormData(prev => ({
@@ -117,6 +117,7 @@ const Interns: React.FC = () => {
       const res = await axios.post("http://127.0.0.1:8000/intern/register", formData);
       setResponse(res.data.result)
       window.location.reload();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed.");
     }
@@ -126,6 +127,7 @@ const Interns: React.FC = () => {
     return `${h}:00:00`;
   };
   // edit Intern
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openEditModal = (intern: any) => {
     setFormData({
       intern_id: intern.intern_id,
@@ -208,7 +210,6 @@ const Interns: React.FC = () => {
       setLoading(false);
     }
   };
-
   // time 
   const to12HourFormat = (time24: string) => {
     const [hourStr, minuteStr] = time24.split(':');
@@ -222,7 +223,7 @@ const Interns: React.FC = () => {
   const preventManualTimeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
   };
-
+  // time range for shift 
   const getTimeInRange = () => {
     switch (formData.shift_name) {
       case 'Day Shift':
@@ -310,6 +311,21 @@ const Interns: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [actionMenuIndex]);
+  // schools tab feature
+  const abbreviationMap = new Map<string, string>();
+  interns.forEach((intern) => {
+    const key = intern.abbreviation.toLowerCase();
+    if (!abbreviationMap.has(key)) {
+      abbreviationMap.set(key, intern.abbreviation);
+    }
+  });
+  const uniqueSchools = Array.from(abbreviationMap.values());
+  useEffect(() => {
+    if (uniqueSchools.length > 0 && !activeTab) {
+      setActiveTab(uniqueSchools[0])
+    }
+  }, [uniqueSchools, activeTab])
+  // remove case sensitivity
 
   return (
     <div className="flex flex-col items-center min-h-screen px-4 relative">
@@ -351,7 +367,7 @@ const Interns: React.FC = () => {
           {/* Schools (Abbreviation) */}
           <div className="w-full mt-10 relative drop-shadow-xl">
             <div className="absolute -top-8 left-0 z-10 flex gap-2">
-              {schools.map((school) => (
+              {uniqueSchools.map((school) => (
                 <button
                   key={school}
                   onClick={() => setActiveTab(school)}
@@ -374,7 +390,7 @@ const Interns: React.FC = () => {
               {(() => {
                 // filter intern
                 const filteredInterns = interns.filter(
-                  (intern) => intern.abbreviation === "CvSU"
+                  (intern) => intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
                 );
                 // filter if no data
                 if (filteredInterns.length === 0) {
@@ -566,12 +582,6 @@ const Interns: React.FC = () => {
                 <div className="mt-4 p-3 bg-green-100 border border-green-400 rounded">
                   <p><strong>Intern Registered!</strong></p>
                   <p>UUID: {response.uuid}</p>
-                  <p className="font-semibold">QR Code:</p>
-                  <img
-                    src={`http://localhost:8000${response.qr_code_path}`}
-                    alt="Intern QR Code"
-                    className="w-48 h-48 border mt-2"
-                  /> {/* <img src={response.qr_code_path} alt="QR Code" /> */}
                 </div>
               )}
               {error && (
