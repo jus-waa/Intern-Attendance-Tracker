@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from "axios";
-import { useLocation } from 'react-router-dom';
 import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react";
 
 type Intern = {
@@ -42,6 +41,8 @@ const Interns: React.FC = () => {
   const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
   const [loading, setLoading] = useState(false); 
   const statusOptions = ['Active', 'Completed', 'Terminated'];
+  const schools = ['CVSU', 'LSPU', 'NTC'];
+
   // form data for adding intern
   const [formData, setFormData] = useState<InternEdit>({
     intern_id:'',
@@ -234,39 +235,36 @@ const Interns: React.FC = () => {
         return { min: '', max: '' };
     }
   };
-const handleTimeInBlur = () => {
-  const { min, max } = getTimeInRange();
-  const value = formData.time_in;
+  const handleTimeInBlur = () => {
+    const { min, max } = getTimeInRange();
+    const value = formData.time_in;
 
-  if (min && max) {
-    if (min < max) {
-      // Normal case (same day range)
-      if (value < min || value > max) {
-        alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
-        setFormData(prev => ({ ...prev, time_in: '', time_out: '' }));
-        return;
-      }
-    } else {
-      // Overnight case (min > max) → valid if value >= min OR value <= max
-      if (!(value >= min || value <= max)) {
-        alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
-        setFormData(prev => ({ ...prev, time_in: '', time_out: '' }));
-        return;
+    if (min && max) {
+      if (min < max) {
+        // Normal case (same day range)
+        if (value < min || value > max) {
+          alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
+          setFormData(prev => ({ ...prev, time_in: '', time_out: '' }));
+          return;
+        }
+      } else {
+        // Overnight case (min > max) → valid if value >= min OR value <= max
+        if (!(value >= min || value <= max)) {
+          alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
+          setFormData(prev => ({ ...prev, time_in: '', time_out: '' }));
+          return;
+        }
       }
     }
-  }
-  // Auto set time out (9 hours later)
-  const [hour, minute] = value.split(':').map(Number);
-  const timeInDate = new Date();
-  timeInDate.setHours(hour, minute);
-  timeInDate.setMinutes(timeInDate.getMinutes() + 540); // 9 hours
-  const autoTimeOut = timeInDate.toTimeString().slice(0, 5);
-  setFormData(prev => ({ ...prev, time_out: autoTimeOut }));
-};
-
-
+    // Auto set time out (9 hours later)
+    const [hour, minute] = value.split(':').map(Number);
+    const timeInDate = new Date();
+    timeInDate.setHours(hour, minute);
+    timeInDate.setMinutes(timeInDate.getMinutes() + 540); // 9 hours
+    const autoTimeOut = timeInDate.toTimeString().slice(0, 5);
+    setFormData(prev => ({ ...prev, time_out: autoTimeOut }));
+  };
   const { min: timeInMin, max: timeInMax } = getTimeInRange();
-  const schools = ['CVSU', 'LSPU', 'NTC'];
   // pagination
   const itemsPerPage = 3;
   const totalPages = Math.ceil(interns.length / itemsPerPage);
