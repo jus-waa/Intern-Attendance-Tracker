@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import {Sun, CalendarDays, Clock, Download, Ellipsis, Search} from "lucide-react";
 
 type Intern = {
-  intern_id: string;
+  intern_id?: string;
   intern_name: string;
   abbreviation: string;
   school_name: string;
@@ -18,6 +18,19 @@ type Intern = {
   updated_at: string;
 };
 
+type InternEdit = {
+  intern_id?: string; // optional for create
+  intern_name: string;
+  school_name: string;
+  abbreviation: string;
+  shift_name: string;
+  time_in: string;
+  time_out: string;
+  total_hours: string;
+  time_remain: string;
+  status: string;
+};
+
 const Interns: React.FC = () => {
   const [showAddInternModal, setAddInternModal] = useState(false);
   const [showEditModal, setEditModal] = useState(false);
@@ -26,9 +39,12 @@ const Interns: React.FC = () => {
   const [actionMenuIndex, setActionMenuIndex] = useState<number | null>(null);  
   const activeMenuRef = useRef<HTMLDivElement | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null); 
+  const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
+  const [loading, setLoading] = useState(false); 
   const statusOptions = ['Active', 'Completed', 'Terminated'];
-  const [formData, setFormData] = useState({
+  // form data for adding intern
+  const [formData, setFormData] = useState<InternEdit>({
+    intern_id:'',
     intern_name: '',
     school_name: '',
     abbreviation: '',
@@ -46,7 +62,7 @@ const Interns: React.FC = () => {
       time_remain: prev.total_hours // mirror value
     }));
   }, [formData.total_hours]);
-  //call for intern table
+  // get Intern
   const [interns, setInterns] = useState<Intern[]>([])
   useEffect(() => {
     const fetchInterns = async () => {
@@ -57,34 +73,15 @@ const Interns: React.FC = () => {
         console.error('Error fetching interns:', error);
       }
     };
-
     fetchInterns();
   }, []);
-  
-  const location = useLocation();
-  useEffect(() => {
-    if (location.state?.openModal) {
-      setAddInternModal(true);
-    }
-  }, [location.state]);
-
-  const to12HourFormat = (time24: string) => {
-    const [hourStr, minuteStr] = time24.split(':');
-    let hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12 || 12;
-    return `${hour}:${minute.toString().padStart(2, '0')} ${ampm}`;
-  };
-
-  // Handle Add Intern
+  // add Intern
   const [response, setResponse] = useState<{ uuid: string; qr_code_path: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hoursInput, setHoursInput] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     if (name === "total_hours") {
       setHoursInput(value); // keep raw input for the number field
       const hours = parseInt(value || "0", 10);
@@ -102,14 +99,12 @@ const Interns: React.FC = () => {
       });
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     console.log("Submitting form data:", formData);
     // create a copy of formData
     const dataToSend = { ...formData };
-      
     // convert number hours to HH:MM:SS
     if (typeof dataToSend.total_hours === "number") {
       dataToSend.total_hours = convertHoursToHHMMSS(dataToSend.total_hours);
@@ -117,12 +112,10 @@ const Interns: React.FC = () => {
     if (typeof dataToSend.time_remain === "number") {
       dataToSend.time_remain = convertHoursToHHMMSS(dataToSend.time_remain);
     }
-
     try {
       const res = await axios.post("http://127.0.0.1:8000/intern/register", formData);
-      setResponse(res.data)
+      setResponse(res.data.result)
       window.location.reload();
-      //setResponse(res.data.result);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed.");
     }
@@ -131,7 +124,99 @@ const Interns: React.FC = () => {
     const h = String(Math.floor(hours)).padStart(2, '0');
     return `${h}:00:00`;
   };
+  // edit Intern
+  const openEditModal = (intern: any) => {
+    setFormData({
+      intern_id: intern.intern_id,
+      intern_name: intern.intern_name,
+      school_name: intern.school_name,
+      abbreviation: intern.abbreviation,
+      shift_name: intern.shift_name,
+      time_in: intern.time_in,
+      time_out: intern.time_out,
+      total_hours: intern.total_hours,
+      time_remain: intern.time_remain,
+      status: intern.status,
+    });
+    setEditModal(true);
+  };
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        intern_id: formData.intern_id,
+        intern_name: formData.intern_name,
+        abbreviation: formData.abbreviation,
+        school_name: formData.school_name,
+        shift_name: formData.shift_name,
+        time_in: formData.time_in.length === 5 ? `${formData.time_in}:00` : formData.time_in,
+        time_out: formData.time_out.length === 5 ? `${formData.time_out}:00` : formData.time_out,
+        total_hours: formatToHHMMSS(formData.total_hours),
+        time_remain: formatToHHMMSS(formData.time_remain),
+        status: formData.status,
+      };
+      const response = await axios.patch("http://localhost:8000/intern/update", payload);
+      console.log("Update success:", response.data);
+      setEditModal(false); // close modal on success
+      window.location.reload();
+     } catch (err) {
+     console.error("Update failed:", err);
+     alert("Update failed. Check console for details.");
+    }
+  };
+  function formatToHHMMSS(value: string | number): string {
+    const decimalHours = typeof value === "string" ? parseFloat(value) : value;
 
+    if (isNaN(decimalHours) || decimalHours < 0) {
+      return "00:00:00";
+    }
+
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.floor((decimalHours - hours) * 60);
+    const seconds = Math.floor(((decimalHours - hours) * 60 - minutes) * 60);
+
+    const hh = hours.toString().padStart(2, "0");
+    const mm = minutes.toString().padStart(2, "0");
+    const ss = seconds.toString().padStart(2, "0");
+
+    return `${hh}:${mm}:${ss}`;
+  }
+  // delete 
+  const handleDelete = async () => {
+    if (!selectedIntern) return;
+
+    if (!window.confirm("Are you sure you want to delete this intern?")) return;
+
+    setLoading(true);
+    try {
+      await axios.delete("http://localhost:8000/intern/delete", {
+        data: { intern_id: selectedIntern.intern_id }, // <-- send intern_id here
+      });
+      alert("Intern deleted successfully");
+      setShowDeleteModal(false);
+      setSelectedIntern(null);
+      window.location.reload();
+    } catch (error) {
+      console.error("Delete failed", error);
+      alert("Failed to delete intern");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // time 
+  const to12HourFormat = (time24: string) => {
+    const [hourStr, minuteStr] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${hour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+  };
   //Manual Time Input
   const preventManualTimeInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -140,39 +225,49 @@ const Interns: React.FC = () => {
   const getTimeInRange = () => {
     switch (formData.shift_name) {
       case 'Day Shift':
-        return { min: '06:00', max: '08:00' };
+        return { min: '06:00', max: '19:00' }; // 6 AM to 7 PM
       case 'Mid Shift':
-        return { min: '12:00', max: '15:00' };
+        return { min: '15:00', max: '22:00' }; // 3 PM to 10 PM
       case 'Night Shift':
-        return { min: '17:00', max: '20:00' };
-      case 'Graveyard Shift':
-        return { min: '22:00', max: '24:00' };
+        return { min: '22:00', max: '07:00' }; // 10 PM to 7 AM (crosses midnight)
       default:
         return { min: '', max: '' };
     }
   };
+const handleTimeInBlur = () => {
+  const { min, max } = getTimeInRange();
+  const value = formData.time_in;
 
-  const handleTimeInBlur = () => {
-    const { min, max } = getTimeInRange();
-    const value = formData.time_in;
-
-    if (min && max && (value < min || value > max)) {
-      alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
-      setFormData(prev => ({ ...prev, timeIn: '', timeOut: '' }));
-      return;
+  if (min && max) {
+    if (min < max) {
+      // Normal case (same day range)
+      if (value < min || value > max) {
+        alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
+        setFormData(prev => ({ ...prev, time_in: '', time_out: '' }));
+        return;
+      }
+    } else {
+      // Overnight case (min > max) → valid if value >= min OR value <= max
+      if (!(value >= min || value <= max)) {
+        alert(`Time In must be between ${to12HourFormat(min)} and ${to12HourFormat(max)} for the selected shift.`);
+        setFormData(prev => ({ ...prev, time_in: '', time_out: '' }));
+        return;
+      }
     }
+  }
+  // Auto set time out (9 hours later)
+  const [hour, minute] = value.split(':').map(Number);
+  const timeInDate = new Date();
+  timeInDate.setHours(hour, minute);
+  timeInDate.setMinutes(timeInDate.getMinutes() + 540); // 9 hours
+  const autoTimeOut = timeInDate.toTimeString().slice(0, 5);
+  setFormData(prev => ({ ...prev, time_out: autoTimeOut }));
+};
 
-    const [hour, minute] = value.split(':').map(Number);
-    const timeInDate = new Date();
-    timeInDate.setHours(hour, minute);
-    timeInDate.setMinutes(timeInDate.getMinutes() + 540);
-    const autoTimeOut = timeInDate.toTimeString().slice(0, 5);
-    setFormData(prev => ({ ...prev, timeOut: autoTimeOut }));
-  };
 
   const { min: timeInMin, max: timeInMax } = getTimeInRange();
   const schools = ['CVSU', 'LSPU', 'NTC'];
-
+  // pagination
   const itemsPerPage = 3;
   const totalPages = Math.ceil(interns.length / itemsPerPage);
 
@@ -328,11 +423,15 @@ const Interns: React.FC = () => {
                       </div>
                     </div>
                     {/* Download and Actions */}
-                    <div className="flex gap-3">
-                      {/* Download */}
-                      <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600">
+                    <div className="flex gap-3">                
+                      <a 
+                        href={`http://localhost:8000/qrcodes/${intern.intern_id}.png`}
+                        download={`${intern.intern_name}_qrcode.png`}
+                        className="flex items-center text-sm text-gray-600 hover:text-cyan-600"
+                        target="_blank"
+                      >
                         <Download className="w-8 h-8" strokeWidth={1} />
-                      </button>
+                      </a>
                       {/* Actions */}
                       <div className="relative">
                         <button className="flex items-center text-sm text-gray-600 hover:text-cyan-600"
@@ -345,8 +444,9 @@ const Interns: React.FC = () => {
                               className="absolute top-10 left-0 bg-white border shadow-lg rounded-lg w-40 z-50"
                             >
                               <button
-                                onClick={() => {setEditModal(true)
-                                  console.log("Edit intern:", intern.intern_name); 
+                                onClick={() => {openEditModal(intern)
+                                  console.log("Edit intern:", intern.intern_name);
+                                  console.log("Intern ID: ", intern.intern_id); 
                                   setActionMenuIndex(null);
                                 }}
                                 className="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -442,7 +542,6 @@ const Interns: React.FC = () => {
                   <option value="Day Shift">Day Shift</option>
                   <option value="Mid Shift">Mid Shift</option>
                   <option value="Night Shift">Night Shift</option>
-                  <option value="Graveyard Shift">Graveyard Shift</option>
                 </select>
                 {/* Time In and Time Out */}
                 <div className="flex gap-2 text-gray-900">
@@ -490,43 +589,43 @@ const Interns: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-xl w-full max-w-xl relative">
               <h2 className="text-xl font-[650] mb-4 text-[#0D223D]">Edit Intern Details</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="text" name="InternName" placeholder="Intern Name" value={formData.intern_name} onChange={handleChange} required className="w-full border p-2 rounded" />
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <input type="text" name="intern_name" placeholder="Intern Name" value={formData.intern_name} onChange={handleEditChange} required className="w-full border p-2 rounded" />
                 <div className="grid grid-cols-4 gap-2">
                   <div className="col-span-3">
-                    <input type="text" name="schoolName" placeholder="School Name" value={formData.school_name} onChange={handleChange} required className="w-full border p-2 rounded" />
+                    <input type="text" name="school_name" placeholder="School Name" value={formData.school_name} onChange={handleEditChange} required className="w-full border p-2 rounded" />
                   </div>
                   <div className="col-span-1">
-                    <input type="text" name="schoolAbbreviation" placeholder="Abbreviation" value={formData.abbreviation} onChange={handleChange} required className="w-full border p-2 rounded text-md" />
+                    <input type="text" name="abbreviation" placeholder="Abbreviation" value={formData.abbreviation} onChange={handleEditChange} required className="w-full border p-2 rounded text-md" />
                   </div>
                 </div>
-                <select name="shift" value={formData.shift_name} onChange={handleChange} required className="w-full border p-2 rounded">
+                <select name="shift_name" value={formData.shift_name} onChange={handleEditChange} required className="w-full border p-2 rounded">
                   <option value="">Select Shift</option>
-                  <option>Day Shift</option>
-                  <option>Mid Shift</option>
-                  <option>Night Shift</option>
-                  <option>Graveyard Shift</option>
+                  <option value="Day Shift">Day Shift</option>
+                  <option value="Mid Shift">Mid Shift</option>
+                  <option value="Night Shift">Night Shift</option>
                 </select>
                 <div className="flex gap-2 text-gray-900">
                   <div className="flex-1">
                     <label className="block text-sm font-medium">Time In</label>
-                    <input type="time" name="timeIn" value={formData.time_in} onChange={handleChange} onBlur={handleTimeInBlur} min={timeInMin} max={timeInMax} required className="w-full border p-2 rounded text-gray-900" />
+                    <input type="time" name="time_in" value={formData.time_in} onChange={handleEditChange} onBlur={handleTimeInBlur} min={timeInMin} max={timeInMax} required className="w-full border p-2 rounded text-gray-900" />
                   </div>
                   <div className="flex-1 text-gray-900">
                     <label className="block text-sm font-medium">Time Out</label>
-                    <input type="time" name="timeOut" value={formData.time_out} onChange={handleChange} onKeyDown={preventManualTimeInput} required className="w-full border p-2 rounded text-gray-900" />
+                    <input type="time" name="time_out" value={formData.time_out} onChange={handleEditChange} onKeyDown={preventManualTimeInput} required className="w-full border p-2 rounded text-gray-900" />
                   </div>
                 </div>
                 <div className="flex gap-2 text-gray-900">
                   <div className="flex-1">
-                    <input type="number" name="totalHours" value={formData.total_hours} onChange={handleChange} placeholder='Total Hours for Completion:'required className="w-full border p-2 rounded text-gray-900" />
+                    <input type="number" name="total_hours" value={formData.total_hours} onChange={handleEditChange} placeholder='Total Hours for Completion:' className="w-full border p-2 rounded text-gray-900" />
                   </div>
                 <div className="flex gap-2 text-gray-900">
                   <div className="flex-1">
                     <select
                       name="status"
                       value={formData.status}
-                      onChange={handleChange}
+                      defaultValue="Active"
+                      onChange={handleEditChange}
                       required
                       className="w-full border p-2 rounded bg-white text-left"
                     >
@@ -565,15 +664,13 @@ const Interns: React.FC = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      console.log("Delete intern:", selectedIntern);
-                      // You can add your actual delete logic here (e.g., API call)
-                      setShowDeleteModal(false);
-                      setSelectedIntern(null);
-                    }}
-                    className="px-4 py-2 rounded-md hover:bg-[#7c1b1b] text-white bg-red-500 transition"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className={`px-4 py-2 rounded-md text-white transition ${
+                      loading ? "bg-red-300 cursor-not-allowed" : "bg-red-500 hover:bg-[#7c1b1b]"
+                    }`}
                   >
-                    Delete
+                    {loading ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </div>

@@ -57,7 +57,6 @@ async def removeIntern(request:ReqInternID, session:Session=Depends(get_db)):
                      message="Intern Information removed successfully.",
                      result=_intern
                      ).model_dump(exclude_none=True)
-
 @router.patch("/update")
 async def update(request:ReqIntern, session:Session=Depends(get_db)):
     _intern = intern.updateIntern(session,
