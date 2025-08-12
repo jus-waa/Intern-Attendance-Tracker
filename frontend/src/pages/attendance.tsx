@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Ellipsis, Download, ChevronDown } from "lucide-react";
+import { Ellipsis, Download, ChevronDown, Calendar } from "lucide-react";
 import SearchComponent from "../components/search"; // Import your separate search component
 import Pagination from "../components/pagination"; // Import the pagination component
 import ExportButton from "../components/exportbutton"; // Import the ExportButton component
+import CalendarComponent from "../components/calendar"; // Import the new calendar component
 
 const rawData = [
   {
@@ -104,8 +105,8 @@ const TimeTable = () => {
   );
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Name");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -120,6 +121,7 @@ const TimeTable = () => {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
   const dropdownRef = useRef(null);
+  const calendarRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -129,51 +131,71 @@ const TimeTable = () => {
         !event.target.closest(".action-button")
       ) {
         setActionMenuIndex(null);
-        setIsDropdownOpen(false);
+      }
+      
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target) &&
+        !event.target.closest(".calendar-button")
+      ) {
+        setIsCalendarOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleExportClick = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  // Function to parse date strings and compare them
+  const parseDate = (dateStr) => {
+    const [month, day, year] = dateStr.split(' ');
+    const monthMap = {
+      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+    return new Date(parseInt(year), monthMap[month], parseInt(day.replace(',', '')));
   };
 
-  const filteredAndSortedData = data
+  const isSameDay = (date1, date2) => {
+    if (!date1 || !date2) return false;
+    return date1.toDateString() === date2.toDateString();
+  };
+
+  const filteredData = data
     .filter(
       (intern) =>
         intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         intern.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
         intern.date.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "Name":
-          return a.name.localeCompare(b.name);
-        case "Status":
-          return a.status.localeCompare(b.status);
-        case "Date":
-          return new Date(a.date) - new Date(b.date);
-        default:
-          return 0;
-      }
+    .filter((intern) => {
+      if (!selectedDate) return true;
+      const internDate = parseDate(intern.date);
+      return isSameDay(internDate, selectedDate);
     });
 
   // Pagination calculations
-  const totalPages = Math.ceil(filteredAndSortedData.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredAndSortedData.slice(startIndex, endIndex);
+  const paginatedData = filteredData.slice(startIndex, endIndex);
 
-  // Reset to first page when search term changes
+  // Reset to first page when search term or selected date changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortBy]);
+  }, [searchTerm, selectedDate]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
     setActionMenuIndex(null); // Close any open action menus
+  };
+
+  const formatSelectedDate = (date) => {
+    if (!date) return '';
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric'
+    });
   };
 
   const exportToPDF = () => {
@@ -209,7 +231,7 @@ const TimeTable = () => {
               </tr>
             </thead>
             <tbody>
-              ${filteredAndSortedData
+              ${filteredData
                 .map(
                   (row, index) => `
                 <tr>
@@ -237,7 +259,6 @@ const TimeTable = () => {
         printWindow.print();
       }, 250);
     }
-    setIsDropdownOpen(false);
   };
 
   const exportToExcel = () => {
@@ -254,7 +275,7 @@ const TimeTable = () => {
     ];
     const csvContent = [
       headers.join("\t"),
-      ...filteredAndSortedData.map((row, index) =>
+      ...filteredData.map((row, index) =>
         [
           index + 1,
           row.name,
@@ -280,7 +301,6 @@ const TimeTable = () => {
       link.click();
       document.body.removeChild(link);
     }
-    setIsDropdownOpen(false);
   };
 
   const handleActionButtonClick = (event, index) => {
@@ -316,7 +336,7 @@ const TimeTable = () => {
 
     // Adjust current page if needed after deletion
     const newTotalPages = Math.ceil(
-      (filteredAndSortedData.length - 1) / itemsPerPage
+      (filteredData.length - 1) / itemsPerPage
     );
     if (currentPage > newTotalPages && newTotalPages > 0) {
       setCurrentPage(newTotalPages);
@@ -346,21 +366,34 @@ const TimeTable = () => {
 
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">SORT BY</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-md"
-                >
-                  <option value="Name">Name</option>
-                  <option value="Status">Status</option>
-                  <option value="Date">Date</option>
-                </select>
+                <span className="text-sm text-gray-600">FILTER BY DATE</span>
+                <div className="relative" ref={calendarRef}>
+                  <button
+                    onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                    className="calendar-button border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-md flex items-center space-x-2 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4 text-gray-600" />
+                    <span className="text-gray-700">
+                      {selectedDate ? formatSelectedDate(selectedDate) : 'Select Date'}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-gray-600" />
+                  </button>
+                  
+                  {isCalendarOpen && (
+                    <div className="absolute right-0 mt-2 z-50">
+                      <CalendarComponent
+                        selectedDate={selectedDate}
+                        onDateSelect={setSelectedDate}
+                        onClose={() => setIsCalendarOpen(false)}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
-                  data={filteredAndSortedData}
+                  data={filteredData}
                   headers={[
                     "ID",
                     "Name",
@@ -386,23 +419,6 @@ const TimeTable = () => {
                     row.remarks,
                   ]}
                 />
-
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-2xl shadow-lg z-10 overflow-hidden">
-                    <button
-                      onClick={exportToPDF}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      PDF
-                    </button>
-                    <button
-                      onClick={exportToExcel}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      Excel
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -463,7 +479,7 @@ const TimeTable = () => {
           onPageChange={setCurrentPage}
           startIndex={startIndex}
           endIndex={startIndex + itemsPerPage}
-          totalEntries={filteredAndSortedData.length}
+          totalEntries={filteredData.length}
           itemsPerPage={itemsPerPage}
         />
 
