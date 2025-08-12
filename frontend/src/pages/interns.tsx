@@ -222,12 +222,12 @@ const Interns: React.FC = () => {
       await axios.delete("http://localhost:8000/intern/delete", {
         data: { intern_id: selectedIntern.intern_id }, // <-- send intern_id here
       });
-      alert("Intern deleted successfully");
+      alert("Intern deleted successfully"); // lagyan notif (parang toast)
       setShowDeleteModal(false);
       setSelectedIntern(null);
       window.location.reload();
     } catch (error) {
-      console.error("Delete failed", error);
+      console.error("Delete failed", error); // dito rin
       alert("Failed to delete intern");
     } finally {
       setLoading(false);
@@ -250,11 +250,11 @@ const Interns: React.FC = () => {
   const getTimeInRange = () => {
     switch (formData.shift_name) {
       case "Day Shift":
-        return { min: "06:00", max: "19:00" }; // 6 AM to 7 PM
+        return { min: "06:00", max: "17:00" }; // 6 AM to 5 PM
       case "Mid Shift":
-        return { min: "15:00", max: "22:00" }; // 3 PM to 10 PM
+        return { min: "10:00", max: "19:00" }; // 10 AM to 7 PM
       case "Night Shift":
-        return { min: "22:00", max: "07:00" }; // 10 PM to 7 AM (crosses midnight)
+        return { min: "22:00", max: "07:00" }; // 6 PM to 7 AM (crosses midnight)
       default:
         return { min: "", max: "" };
     }
@@ -460,7 +460,6 @@ const Interns: React.FC = () => {
                   startIndex,
                   endIndex
                 );
-
                 {
                   /* Inner Content */
                 }
