@@ -37,6 +37,6 @@ def mark_absent():
 
 def start_scheduler():
     scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Manila"))
-    trigger = CronTrigger(hour=4, minute=0) #Runs by: 
+    trigger = CronTrigger(hour=4, minute=0) #Runs by 4 AM
     scheduler.add_job(mark_absent, trigger)
     scheduler.start()

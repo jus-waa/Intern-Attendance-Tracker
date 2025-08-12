@@ -8,6 +8,7 @@ class Attendance(Base):
     intern_id=Column(UUID, ForeignKey("intern.intern_id", ondelete="CASCADE"))
     attendance_date=Column(Date, server_default=text('CURRENT_DATE'))
     abbreviation=Column(String(255))
+    intern_name=Column(String(255))
     time_in=Column(TIMESTAMP(timezone=True)) 
     time_out=Column(TIMESTAMP(timezone=True)) 
     total_hours=Column(Interval)

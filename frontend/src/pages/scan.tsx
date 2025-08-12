@@ -6,6 +6,7 @@ import inputLogo from '../assets/input.png';
 const Scan: React.FC = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [scannedResult, setScannedResult] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [showManualModal, setShowManualModal] = useState(false);
@@ -69,26 +70,72 @@ const Scan: React.FC = () => {
       stopScanning();
     };
   }, []);
+  // registers attendance
+  const registerAttendance = async (internId: string) => {
+    try {
+      const response = await fetch("http://localhost:8000/attendance/qr-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intern_id: internId })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Attendance registered:", data);
+      console.log(response)
+      return data;
+    } catch (err) {
+      console.error("Error registering attendance:", err);
+      setError("Failed to register attendance");
+      return null;
+    }
+  };
 
   const handleSuccessScan = async (decodedText: string, decodedResult: Html5QrcodeResult) => {
-    console.log(`QR Code detected: ${decodedText}`, decodedResult);
-    setScannedResult(decodedText);
-    setError('');
-
+    // Stop scanner immediately so it won't loop detections
     if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
         setIsScanning(false);
       } catch (err) {
-        console.error("Error stopping scanner after successful scan", err);
+        console.error("Error stopping scanner", err);
       }
     }
 
+    console.log(`QR Code detected: ${decodedText}`, decodedResult);
+    setError('');
+
+    try {
+      const response = await fetch("http://localhost:8000/attendance/qr-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ intern_id: decodedText })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Attendance registered:", data);
+
+      if (data.message !== "Already checked out today") {
+        setScannedResult(decodedText);
+      }
+    } catch (err) {
+      console.error("Error registering attendance:", err);
+      setError("Failed to register attendance");
+    }
+
+    // Restart scan after a delay
     setTimeout(() => {
       setScannedResult('');
       startScanning();
     }, 3000);
   };
+
 
   const handleScanError = (errorMessage: string) => {
     console.warn("QR Scan Error (ignored):", errorMessage);
@@ -199,12 +246,12 @@ const Scan: React.FC = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   const now = new Date();
                   console.log("Manual Entry UID:", manualUID);
                   console.log("Date:", now.toLocaleDateString());
                   console.log("Time:", now.toLocaleTimeString());
-
+                  await registerAttendance(manualUID)
                   setShowManualModal(false);
                   setManualUID('');
                   startScanning();

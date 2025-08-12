@@ -131,7 +131,9 @@ def checkInAttendance(session:Session, intern_id:UUID):
         intern_id=intern_id,
         attendance_date=date.today(),
         time_in=datetime.now(),
-        check_in=check_in
+        check_in=check_in,
+        abbreviation=intern.abbreviation,
+        intern_name=intern.intern_name
     )
     session.add(_attendance)
     session.commit()

@@ -37,12 +37,12 @@ async def registerAttendanceByQr(request:ReqInternID, session:Session=Depends(ge
 async def scanQRAttendance():
     pass
 
-@router.get("/timesheet/{abbreviation}")
-async def getAllBySchool(abbreviation:str, session:Session=Depends(get_db)):
-    _attendance = attendance.getBySchool(session, abbreviation, 0, 100)
+@router.get("/timesheet")
+async def getAll(session:Session=Depends(get_db)):
+    _attendance = attendance.getAllAttendance(session, 0, 100)
     return ResAttendance(code="200",
                          status="Ok",
-                         message=f"Intern from {abbreviation} fetched successfully.",
+                         message=f"Attendance fetched successfully.",
                          result=_attendance
                          ).model_dump(exclude_none=True)
 
