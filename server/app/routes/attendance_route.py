@@ -84,7 +84,7 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
                          ).model_dump(exclude_none=True)
 
 @router.delete("/timesheet/delete")
-async def deleteById(request: AttendanceSchema, session: Session=Depends(get_db)):
+async def deleteById(request: ReqInternID, session: Session=Depends(get_db)):
     _attendance = attendance.removeAttendance(session, intern_id=request.intern_id)
     return ResAttendance(code="200",
                      status="Ok",

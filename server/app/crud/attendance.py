@@ -255,13 +255,15 @@ def removeAttendance(session:Session, intern_id: int):
 def updateAttendance(session:Session, 
                     intern_id: UUID,
                     remarks: str,
-                    total_hours: timedelta
+                    total_hours: timedelta,
+                    intern_name: str
                     ):
     
     _attendance = getAttendanceById(session=session, intern_id=intern_id)
 
     _attendance.remarks=remarks
     _attendance.total_hours=total_hours
+    _attendance.intern_name=intern_name
 
     session.commit()
     session.refresh(_attendance)
