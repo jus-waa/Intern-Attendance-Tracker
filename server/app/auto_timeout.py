@@ -1,26 +1,36 @@
-# auto_timeout.py
-from datetime import datetime, date, time
+from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
-from app.models.attendance_model import Attendance  # Update to your actual path
-from app.utils.db import SessionLocal  # Your DB session
+from app.models.attendance_model import Attendance
+from app.models.intern_model import Intern
+from app.utils.db import SessionLocal
 
 def auto_timeout():
     session: Session = SessionLocal()
     try:
-        current_time = datetime.now().time()
+        now = datetime.now()
 
-        records = session.query(Attendance).filter(
-            Attendance.attendance_date == date.today(),
+        records = session.query(Attendance).join(Intern).filter(
             Attendance.time_in.isnot(None),
             Attendance.time_out.is_(None)
         ).all()
 
         for attendance in records:
-            time_in_datetime = datetime.combine(date.today(), attendance.time_in)
-            time_out_datetime = datetime.combine(date.today(), time(23, 59, 59))
-            total_duration = time_out_datetime - time_in_datetime
-            attendance.time_out = time(23, 59, 59)
-            attendance.total_hours = total_duration.total_seconds() / 3600
+            intern = attendance.intern  # via relationship
+
+            # Build scheduled shift end datetime
+            scheduled_end = datetime.combine(
+                attendance.attendance_date, intern.time_out
+            )
+
+            # If shift passes midnight, move end to next day
+            if intern.time_out < intern.time_in:
+                scheduled_end += timedelta(days=1)
+
+            # Auto-timeout if current time passed scheduled end
+            if now >= scheduled_end:
+                attendance.time_out = scheduled_end
+                attendance.total_hours = scheduled_end - attendance.time_in
+                attendance.timeout_type = "auto"
 
         session.commit()
         print(f"{len(records)} records auto-checked out.")

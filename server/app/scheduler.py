@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
+from app.auto_timeout import auto_timeout
 from datetime import date
 import pytz
 
@@ -37,6 +38,7 @@ def mark_absent():
 
 def start_scheduler():
     scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Manila"))
-    trigger = CronTrigger(hour=4, minute=0) #Runs by 4 AM
+    trigger = CronTrigger(hour=4, minute=00) #Runs by 4 AM
+    scheduler.add_job(auto_timeout, "cron", minute="*")  # runs every hour at :00
     scheduler.add_job(mark_absent, trigger)
     scheduler.start()
