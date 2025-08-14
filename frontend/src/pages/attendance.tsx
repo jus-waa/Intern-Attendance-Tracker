@@ -20,11 +20,6 @@ type Attendance = {
   abbreviation: string;
 };
 
-interface AttendanceEdit {
-  intern_id: string;
-  remarks: string;
-}
-
 const InternAttendanceData: Attendance[] = [
   {
     attendance_id: "",
@@ -373,9 +368,9 @@ const TimeTable = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3">{formatDate(intern.attendance_date)}</td>
-                  <td className="px-4 py-3">{formatTime(intern.time_in)}</td>
+                  <td className="px-4 py-3">{intern.time_in ? formatTime(intern.time_in) : ""}</td>
                   <td className="px-4 py-3">{intern.time_out ? formatTime(intern.time_out) : ""}</td>
-                  <td className="px-4 py-3">{intern.total_hours ? formatDuration(intern.total_hours) : ""}</td>
+                  <td className="px-4 py-3">{intern.total_hours ? formatDuration(intern.total_hours) : "00:00:00"}</td>
                   <td className="px-4 py-3">{intern.check_in}</td>
                   <td className="px-4 py-3">{intern.remarks}</td>
                   <td className="px-4 py-3 relative">
