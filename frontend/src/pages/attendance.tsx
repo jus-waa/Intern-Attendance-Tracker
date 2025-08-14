@@ -5,6 +5,7 @@ import Pagination from "../components/pagination"; // Import the pagination comp
 import ExportButton from "../components/exportbutton"; // Import the ExportButton component
 import CalendarComponent from "../components/calendar"; // Import the new calendar component
 import axios from "axios";
+import SchoolTabs from "../components/schools"; // adjust path
 
 type Attendance = {
   attendance_id: string;
@@ -43,7 +44,7 @@ const TimeTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState("");
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -99,6 +100,9 @@ const TimeTable = () => {
 
   // Use attendanceData instead of data for filtering
   const filteredData = attendanceData
+    .filter((intern) => 
+      intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
+    )
     .filter(
       (intern) =>
         intern.intern_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,7 +113,7 @@ const TimeTable = () => {
       if (!selectedDate) return true;
       const internDate = parseDate(formatDate(intern.attendance_date));
       return isSameDay(internDate, selectedDate);
-    });
+  });
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -338,6 +342,13 @@ const TimeTable = () => {
             </div>
           </div>
         </div>
+        {/*  */}
+        <SchoolTabs
+          data={attendanceData}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
+
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="min-w-full text-sm text-left text-gray-700 table-auto">
             <thead className="bg-white text-gray-600 border-b">

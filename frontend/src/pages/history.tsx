@@ -3,43 +3,56 @@ import { Download, ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
 import SearchComponent from "../components/search";
 import ExportButton from "../components/exportbutton";
-interface InternData {
+import SchoolTabs from "../components/schools"; // adjust path
+
+type InternData = {
   intern_id: string;
-  name: string;
-  wdId: string;
-  shiftSchedule: "Morning Shift" | "Mid Shift" | "Graveyard Shift";
-  coordinator: string;
-  status: "Complete" | "Incomplete";
-  university: string;
-  totalCompletedHours: number;
+  intern_name: string;
+  school_name: string;
+  shift_name: string;
+  remarks: string;  
+  status: string;
+  abbreviation: string;
+  total_hours: string;
 }
 
 const InternHistoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("");
   const [sortBy, setSortBy] = useState("University");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [internData, setInternData] = useState<InternData[]>([]);
   const itemsPerPage = 10;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Sample data with university field and total completed hours - auto-generate IDs
-  const baseInternData = [
-    {
-      name: "Pukerat",
-      wdId: "123456789",
-      shiftSchedule: "Morning Shift" as const,
-      coordinator: "Angelo Fuentes",
-      status: "Complete" as const,
-      university: "CvSU",
-      totalCompletedHours: 480,
-    },
-  ];
+    // Fetch data from backend
+  useEffect(() => {
+    const fetchInternHistory = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/history/list");
+        const data = await res.json();
 
-  // Auto-generate IDs
-  const internData: InternData[] = baseInternData.map((intern, index) => ({
-    ...intern,
-    id: (index + 1).toString(),
-  }));
+        if (data?.result) {
+          const mapped: InternData[] = data.result.map((intern: any) => ({
+            intern_id: intern.intern_id ?? "",
+            intern_name: intern.intern_name ?? "",
+            school_name: intern.school_name ?? "",
+            shift_name: intern.shift_name ?? "",
+            remarks: intern.remarks ?? "",
+            status: intern.status ?? "",
+            abbreviation: intern.abbreviation ?? "",
+            total_hours: intern.total_hours?.toString() ?? "0"
+          }));
+          setInternData(mapped);
+        }
+      } catch (err) {
+        console.error("Error fetching intern history:", err);
+      }
+    };
+
+    fetchInternHistory();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -58,36 +71,17 @@ const InternHistoryPage: React.FC = () => {
     };
   }, []);
 
-  // Filter and search functionality with sorting
-  const filteredData = useMemo(() => {
-    let filtered = internData.filter(
+  // Use attendanceData instead of data for filtering
+  const filteredData = internData
+    .filter((intern) => 
+      intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
+    )
+    .filter(
       (intern) =>
-        intern.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        intern.wdId.includes(searchTerm) ||
-        intern.coordinator.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        intern.university.toLowerCase().includes(searchTerm.toLowerCase())
+        intern.intern_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intern.remarks.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        intern.abbreviation.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // Sort the filtered data
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "Name":
-          return a.name.localeCompare(b.name);
-        case "University":
-          return a.university.localeCompare(b.university);
-        case "Date":
-          return new Date().getTime() - new Date().getTime(); // Remove date sorting since no dates
-        case "Shift":
-          return a.shiftSchedule.localeCompare(b.shiftSchedule);
-        case "Status":
-          return a.status.localeCompare(b.status);
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [searchTerm, sortBy, internData]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -96,42 +90,6 @@ const InternHistoryPage: React.FC = () => {
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   // Export functions
-  const exportToCSV = () => {
-    const headers = [
-      "ID",
-      "Name",
-      "University",
-      "Shift Schedule",
-      "Completed Hours",
-      "Status",
-    ];
-    const csvContent = [
-      headers.join(","),
-      ...filteredData.map((row) =>
-        [
-          row.id,
-          row.name,
-          row.university,
-          row.shiftSchedule,
-          row.totalCompletedHours,
-          row.status,
-        ].join(",")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "intern_history.csv");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-    setIsDropdownOpen(false);
-  };
 
   const exportToPDF = () => {
     // Create a simple PDF-like content (HTML to be printed as PDF)
@@ -168,11 +126,11 @@ const InternHistoryPage: React.FC = () => {
                 .map(
                   (row) => `
                 <tr>
-                  <td>${row.id}</td>
-                  <td>${row.name}</td>
-                  <td>${row.university}</td>
-                  <td>${row.shiftSchedule}</td>
-                  <td>${row.totalCompletedHours}</td>
+                  <td>${row.intern_id}</td>
+                  <td>${row.intern_name}</td>
+                  <td>${row.abbreviation}</td>
+                  <td>${row.shift_name}</td>
+                  <td>${row.total_hours}</td>
                   <td>${row.status}</td>
                 </tr>
               `
@@ -206,11 +164,11 @@ const InternHistoryPage: React.FC = () => {
       headers.join("\t"),
       ...filteredData.map((row) =>
         [
-          row.id,
-          row.name,
-          row.university,
-          row.shiftSchedule,
-          row.totalCompletedHours,
+          row.intern_id,
+          row.intern_name,
+          row.abbreviation,
+          row.shift_name,
+          row.total_hours,
           row.status,
         ].join("\t")
       ),
@@ -228,10 +186,6 @@ const InternHistoryPage: React.FC = () => {
       document.body.removeChild(link);
     }
     setIsDropdownOpen(false);
-  };
-
-  const handleExportClick = () => {
-    setIsDropdownOpen(!isDropdownOpen);
   };
 
   const getStatusColor = (status: string) => {
@@ -327,7 +281,12 @@ const InternHistoryPage: React.FC = () => {
             </div>
           </div>
         </div>
-
+        {/*  */}
+        <SchoolTabs
+          data={internData}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         {/* Table */}
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="w-full">
@@ -357,29 +316,29 @@ const InternHistoryPage: React.FC = () => {
               {paginatedData.length > 0 ? (
                 paginatedData.map((intern, index) => (
                   <tr
-                    key={intern.id}
+                    key={intern.intern_id}
                     className={`hover:bg-gray-50 ${
                       index !== paginatedData.length - 1
                         ? "border-b border-gray-200"
                         : ""
                     }`}
-                  >
+                  > 
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
                       {startIndex + index + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">
-                      {intern.name}
+                      {intern.intern_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className="ml-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
-                        {intern.university}
+                        {intern.abbreviation}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
-                      {intern.shiftSchedule}
+                      {intern.shift_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
-                      {intern.totalCompletedHours} hrs
+                      {intern.total_hours} hrs
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span

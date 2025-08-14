@@ -8,7 +8,6 @@ from app.models.intern_history_model import InternHistory
 from app.models.intern_model import Intern
 from app.schemas.intern_history_schema import InternHistorySchema
 
-
 def getAllInternHistory(session: Session, skip: int = 0, limit: int = 100):
     #get all interns that are Completed or Terminated
     finished_interns = session.query(InternHistory).filter(
