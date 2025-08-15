@@ -16,11 +16,10 @@ def mark_absent():
         interns = db.query(Intern).all()
 
         for intern in interns:
+            # Look for today's attendance (if still no entry by the next shift start)
             attendance = db.query(Attendance).filter(
                 Attendance.intern_id == intern.intern_id,
-                Attendance.attendance_date == today,
-                Attendance.abbreviation == intern.abbreviation,
-                Attendance.intern_name == intern.intern_name
+                Attendance.attendance_date == today
             ).first()
 
             if not attendance:
@@ -50,10 +49,21 @@ def refresh_jobs(scheduler):
             timeout_job_id = f"auto_timeout_{intern.intern_id}"
 
             if not scheduler.get_job(absent_job_id):
+                # Shift start time for tomorrow
+                absent_hour = intern.time_in.hour
+                absent_minute = intern.time_in.minute - 1
+                if absent_minute < 0:
+                    absent_hour -= 1
+                    absent_minute += 60
+                
                 scheduler.add_job(
                     mark_absent,
-                    CronTrigger(hour=intern.time_in.hour, minute=intern.time_in.minute, timezone=pytz.timezone("Asia/Manila")),
-                    id=absent_job_id
+                    CronTrigger(
+                        hour=absent_hour,
+                        minute=absent_minute,
+                        timezone=pytz.timezone("Asia/Manila")
+                    ),
+                    id=f"mark_absent_{intern.intern_id}"
                 )
 
             if not scheduler.get_job(timeout_job_id):
