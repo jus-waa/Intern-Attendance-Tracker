@@ -25,3 +25,6 @@ class ResInternHistory(BaseModel, Generic[T]):
     status: str
     message: str
     result: Optional[T]
+
+class AbbreviationRequest(BaseModel):
+    abbreviation: str

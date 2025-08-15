@@ -104,13 +104,14 @@ const Interns: React.FC = () => {
         ...formData,
         total_hours: formatted,
         time_remain: formatted, // mirror total_hours
+
       });
     } else {
       setFormData({
         ...formData,
         [name]: value,
       });
-    }
+    }    
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -848,7 +849,6 @@ const Interns: React.FC = () => {
                         name="time_out"
                         value={formData.time_out}
                         onChange={handleEditChange}
-                        onKeyDown={preventManualTimeInput}
                         required
                         className="w-full border p-2 rounded text-gray-900"
                       />

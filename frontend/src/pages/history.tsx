@@ -53,6 +53,26 @@ const InternHistoryPage: React.FC = () => {
 
     fetchInternHistory();
   }, []);
+  
+    useEffect(() => {
+    // Example abbreviation, replace with actual logic to get it
+    const abbreviation = "Kabsu";
+
+    fetch("http://127.0.0.1:8000/history/transfer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ abbreviation }),
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log("Auto transfer result:", data);
+    })
+    .catch(err => {
+      console.error("Error during auto transfer:", err);
+    });
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
