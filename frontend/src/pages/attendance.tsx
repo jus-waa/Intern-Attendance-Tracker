@@ -1,3 +1,4 @@
+//attendance.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { Ellipsis, ChevronDown, Calendar } from "lucide-react";
 import SearchComponent from "../components/search"; 
@@ -411,7 +412,7 @@ const TimeTable = () => {
                       className="border-b hover:bg-gray-50"
                     >
                       <td className="px-4 py-3">{startIndex + index + 1}</td>
-                      <td className="px-4 py-3 font-bold">{intern.intern_name}</td>
+                      <td className="px-4 py-3 font-medium">{intern.intern_name}</td>
                       <td className="px-4 py-3 text-center">
                         <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-normal">
                           {intern.abbreviation}

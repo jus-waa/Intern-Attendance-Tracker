@@ -93,15 +93,13 @@ def transferAllSchoolsToHistory(session: Session):
         raise HTTPException(status_code=500, detail=f"Database error during transfer: {str(e)}")
     
 def deleteAllBySchool(session: Session, abbreviation: str):
-    _intern_history = getInternHistoryBySchool(session=session, abbreviation=abbreviation)
-    
-    for intern in _intern_history:
-        session.delete(intern)
-    
+    deleted = session.query(InternHistory).filter(
+        InternHistory.abbreviation == abbreviation
+    ).delete(synchronize_session=False)
+
     session.commit()
-    
-    return {"message": f"Interns from {abbreviation} deleted successfully."}
-    
+    return {"deleted_count": deleted}
+
     
 def deleteOldInternHistory(session: Session):
     # Records older than 30 days from today

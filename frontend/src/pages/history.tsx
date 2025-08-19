@@ -1,3 +1,4 @@
+//history.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
@@ -92,7 +93,7 @@ const InternHistoryPage: React.FC = () => {
   // Use attendanceData instead of data for filtering
   const filteredData = internData
     .filter((intern) => 
-      activeTab === "All" || intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
+      activeSchool === "All" || intern.abbreviation.toLowerCase() === activeSchool.toLowerCase()
     )
     .filter(
       (intern) =>
@@ -216,40 +217,39 @@ const InternHistoryPage: React.FC = () => {
     }
   };
 
-  // inside InternHistoryPage
-  const handleDeleteBySchool = async (abbreviation: string) => {
-    if (!window.confirm(`Are you sure you want to delete all interns from ${abbreviation}?`)) {
-      return;
+const handleDeleteBySchool = async (abbreviation: string) => {
+  if (!window.confirm(`Are you sure you want to delete ALL interns from ${abbreviation}?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch("http://localhost:8000/history/school/delete", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ abbreviation }), // send in body
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to delete records.");
     }
 
-    try {
-      const res = await fetch("http://localhost:8000/history/school/delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ abbreviation }),
-      });
+    const data = await res.json();
+    console.log("Delete response:", data);
 
-      if (!res.ok) {
-        throw new Error("Failed to delete records.");
-      }
+    // Remove all interns from that school from state
+    setInternData((prev) =>
+      prev.filter((intern) => intern.abbreviation.toLowerCase() !== abbreviation.toLowerCase())
+    );
 
-      const data = await res.json();
-      console.log("Delete response:", data);
+    alert(`All records from ${abbreviation} removed successfully.`);
+  } catch (err) {
+    console.error("Error deleting records:", err);
+    alert("Error deleting records. Check console.");
+  }
+};
 
-      // Update UI by filtering out deleted records
-      setInternData((prev) =>
-        prev.filter((intern) => intern.abbreviation !== abbreviation)
-      );
-
-      alert(`All records from ${abbreviation} removed successfully.`);
-    } catch (err) {
-      console.error("Error deleting records:", err);
-      alert("Error deleting records. Check console.");
-    }
-  };
-  
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -281,23 +281,32 @@ const InternHistoryPage: React.FC = () => {
                 onSchoolChange={setActiveSchool}
               />
 
-              <div className="relative inline-block">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="border border-gray-200 rounded-2xl px-4 py-2 pr-10 text-sm 
-                          focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-md appearance-none"
-              >
-                <option value="Name">Name</option>
-                <option value="Shift">Shift</option>
-                <option value="Status">Status</option>
-              </select>
-              {/* Custom dropdown icon */}
-              <ChevronDown
-                className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-              />
-            </div>
+              {/* Delete All by School */}
+              {activeSchool !== "All" && (
+                <button
+                  onClick={() => handleDeleteBySchool(activeSchool)}
+                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-2xl shadow-md hover:bg-red-700 transition"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All ({activeSchool})
+                </button>
+              )}
 
+              <div className="relative inline-block">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-gray-200 rounded-2xl px-4 py-2 pr-10 text-sm 
+                            focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-md appearance-none"
+                >
+                  <option value="Name">Name</option>
+                  <option value="Shift">Shift</option>
+                  <option value="Status">Status</option>
+                </select>
+                <ChevronDown
+                  className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                />
+              </div>
 
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
@@ -346,23 +355,23 @@ const InternHistoryPage: React.FC = () => {
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-gray-200 text-left text-sm text-gray-600 tracking-wider">
+                <th className="px-6 py-4">
                   ID
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4">
                   Name
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4">
                   University
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4">
                   Shift Schedule
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4">
                   Completed Hours
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4">
                   Status
                 </th>
               </tr>
@@ -384,7 +393,7 @@ const InternHistoryPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">
                       {intern.intern_name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="flex px-6 py-4 whitespace-nowrap self-center">
                       <span className="ml-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
                         {intern.abbreviation}
                       </span>
@@ -393,11 +402,11 @@ const InternHistoryPage: React.FC = () => {
                       {intern.shift_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
-                      {intern.total_hours} hrs
+                      {intern.total_hours} hours
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="flex px-6 py-4 whitespace-nowrap text-center">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white ${getStatusColor(
+                        className={`px-2 py-1 text-xs font-semibold rounded-full text-white ${getStatusColor(
                           intern.status
                         )}`}
                       >
