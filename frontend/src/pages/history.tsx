@@ -108,104 +108,6 @@ const InternHistoryPage: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
-  // Export functions
-  const exportToPDF = () => {
-    // Create a simple PDF-like content (HTML to be printed as PDF)
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Intern History Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            h1 { color: #333; }
-          </style>
-        </head>
-        <body>
-          <h1>Intern History Report</h1>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>University</th>
-                <th>Shift Schedule</th>
-                <th>Completed Hours</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredData
-                .map(
-                  (row) => `
-                <tr>
-                  <td>${row.intern_id}</td>
-                  <td>${row.intern_name}</td>
-                  <td>${row.abbreviation}</td>
-                  <td>${row.shift_name}</td>
-                  <td>${row.total_hours}</td>
-                  <td>${row.status}</td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </body>
-        </html>
-      `;
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 250);
-    }
-    setIsDropdownOpen(false);
-  };
-
-  const exportToExcel = () => {
-    // Create a simple Excel-compatible format (CSV with .xlsx extension)
-    const headers = [
-      "ID",
-      "Name",
-      "University",
-      "Shift Schedule",
-      "Completed Hours",
-      "Status",
-    ];
-    const csvContent = [
-      headers.join("\t"),
-      ...filteredData.map((row) =>
-        [
-          row.intern_id,
-          row.intern_name,
-          row.abbreviation,
-          row.shift_name,
-          row.total_hours,
-          row.status,
-        ].join("\t")
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "application/vnd.ms-excel" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", "intern_history.xls");
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-    setIsDropdownOpen(false);
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Complete":
@@ -216,7 +118,6 @@ const InternHistoryPage: React.FC = () => {
         return "bg-gray-500";
     }
   };
-
 const handleDeleteBySchool = async (abbreviation: string) => {
   if (!window.confirm(`Are you sure you want to delete ALL interns from ${abbreviation}?`)) {
     return;
@@ -281,17 +182,6 @@ const handleDeleteBySchool = async (abbreviation: string) => {
                 onSchoolChange={setActiveSchool}
               />
 
-              {/* Delete All by School */}
-              {activeSchool !== "All" && (
-                <button
-                  onClick={() => handleDeleteBySchool(activeSchool)}
-                  className="flex items-center px-4 py-2 bg-red-600 text-white rounded-2xl shadow-md hover:bg-red-700 transition"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete All ({activeSchool})
-                </button>
-              )}
-
               <div className="relative inline-block">
                 <select
                   value={sortBy}
@@ -310,7 +200,7 @@ const handleDeleteBySchool = async (abbreviation: string) => {
 
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
-                  data={filteredData}
+                  data={filteredData.map((row, i) => ({ ...row, id: i + 1 }))}
                   headers={[
                     "ID",
                     "Name",
@@ -323,34 +213,32 @@ const handleDeleteBySchool = async (abbreviation: string) => {
                   title="Intern History Report"
                   formatRowData={(row) => [
                     row.id,
-                    row.name,
-                    row.university,
-                    row.shiftSchedule,
-                    row.totalCompletedHours,
+                    row.intern_name,
+                    row.abbreviation,
+                    row.shift_name,
+                    row.total_hours,
                     row.status
                   ]}
                 />
-
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-2xl shadow-lg z-10 overflow-hidden">
-                    <button
-                      onClick={exportToPDF}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      PDF
-                    </button>
-                    <button
-                      onClick={exportToExcel}
-                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                      Excel
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
         </div>
+        
+        {/* Delete All by School */}
+        <div className="flex place-content-end mr-3">
+            {activeSchool !== "All" && (
+                <button
+                  onClick={() => handleDeleteBySchool(activeSchool)}
+                  className="flex items-center px-4 py-2 text-gray-600"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All ({activeSchool})
+                </button>
+            )}
+        </div>
+
+              
         {/* Table */}
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="w-full">
