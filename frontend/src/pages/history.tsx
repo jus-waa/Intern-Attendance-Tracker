@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { Download, ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
 import SearchComponent from "../components/search";
 import ExportButton from "../components/exportbutton";
-
+import SchoolTabs from "../components/schools"; // adjust path
 
 type InternData = {
   intern_id: string;
@@ -224,24 +224,19 @@ const InternHistoryPage: React.FC = () => {
             />
 
             <div className="flex items-center space-x-4">
-              <div className="relative inline-block">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="border border-gray-200 rounded-2xl px-4 py-2 pr-10 text-sm 
-                          focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-md appearance-none"
-              >
-                <option value="University">University</option>
-                <option value="Name">Name</option>
-                <option value="Shift">Shift</option>
-                <option value="Status">Status</option>
-              </select>
-              {/* Custom dropdown icon */}
-              <ChevronDown
-                className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-              />
-            </div>
-
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">SORT BY</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border  border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-md"
+                >
+                  <option value="University">University</option>
+                  <option value="Name">Name</option>
+                  <option value="Shift">Shift</option>
+                  <option value="Status">Status</option>
+                </select>
+              </div>
 
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
@@ -286,6 +281,12 @@ const InternHistoryPage: React.FC = () => {
             </div>
           </div>
         </div>
+        {/*  */}
+        <SchoolTabs
+          data={internData}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
         {/* Table */}
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="w-full">
