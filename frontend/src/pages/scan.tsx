@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode, type Html5QrcodeResult } from "html5-qrcode";
 import inputLogo from '../assets/input.png';
-
+// latest commit frontend issues
 const Scan: React.FC = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isScanning, setIsScanning] = useState(false);
