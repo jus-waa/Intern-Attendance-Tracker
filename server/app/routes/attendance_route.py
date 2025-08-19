@@ -92,6 +92,15 @@ async def deleteById(request: ReqInternID, session: Session=Depends(get_db)):
                      result=_attendance
                      ).model_dump(exclude_none=True)
 
+@router.get("/timesheet/by-date")
+async def getByDate(target_date: date, session: Session = Depends(get_db)):
+    _attendance = attendance.getAttendanceByDate(session, target_date)
+    return ResAttendance(
+        code="200",
+        status="Ok",
+        message=f"Attendance fetched successfully for {target_date}.",
+        result=_attendance
+    ).model_dump(exclude_none=True)
 
 
 

@@ -23,6 +23,19 @@ def getAttendanceById(session:Session, intern_id: UUID):
         raise HTTPException(status_code=404, detail=f"Attendance with id:{intern_id} not found.")
     return _attendance
 
+def getAttendanceByDate(session: Session, target_date: date, skip: int = 0, limit: int = 100):
+    attendances = (
+        session.query(Attendance)
+        .filter(Attendance.attendance_date == target_date)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    if not attendances:
+        raise HTTPException(status_code=404, detail="No attendance found for that date.")
+
+    return attendances
+
 def getBySchool(session:Session, abbreviation: str, skip:int = 0, limit:int = 100):
     _attendance = (session.query(Attendance)
         .join(Intern, Attendance.intern_id == Intern.intern_id)
