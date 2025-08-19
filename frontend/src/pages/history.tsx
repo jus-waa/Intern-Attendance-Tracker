@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
 import SearchComponent from "../components/search";
 import ExportButton from "../components/exportbutton";
-
+import SchoolDropdown from "../components/schools"; 
 
 type InternData = {
   intern_id: string;
@@ -23,10 +23,11 @@ const InternHistoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [internData, setInternData] = useState<InternData[]>([]);
+  const [activeSchool, setActiveSchool] = useState<string>("All"); 
   const itemsPerPage = 10;
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Fetch data from backend
+  // Fetch data from backend
   useEffect(() => {
     const fetchInternHistory = async () => {
       try {
@@ -53,6 +54,16 @@ const InternHistoryPage: React.FC = () => {
 
     fetchInternHistory();
   }, []);
+
+  useEffect(() => {
+  if (activeSchool === "All") {
+    setInternData(internData);
+  } else {
+    setInternData(
+      internData.filter((intern) => intern.school_name === activeSchool)
+    );
+  }
+}, [activeSchool, internData]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -224,6 +235,12 @@ const InternHistoryPage: React.FC = () => {
             />
 
             <div className="flex items-center space-x-4">
+              <SchoolDropdown
+                data={internData} // pass the full internData
+                activeSchool={activeSchool}
+                onSchoolChange={setActiveSchool}
+              />
+
               <div className="relative inline-block">
               <select
                 value={sortBy}
@@ -231,7 +248,6 @@ const InternHistoryPage: React.FC = () => {
                 className="border border-gray-200 rounded-2xl px-4 py-2 pr-10 text-sm 
                           focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-md appearance-none"
               >
-                <option value="University">University</option>
                 <option value="Name">Name</option>
                 <option value="Shift">Shift</option>
                 <option value="Status">Status</option>

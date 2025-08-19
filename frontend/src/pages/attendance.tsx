@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Ellipsis, ChevronDown, Calendar } from "lucide-react";
-import SearchComponent from "../components/search"; // Import your separate search component
-import Pagination from "../components/pagination"; // Import the pagination component
-import ExportButton from "../components/exportbutton"; // Import the ExportButton component
-import CalendarComponent from "../components/calendar"; // Import the new calendar component
+import SearchComponent from "../components/search"; 
+import Pagination from "../components/pagination"; 
+import ExportButton from "../components/exportbutton"; 
+import CalendarComponent from "../components/calendar"; 
 import axios from "axios";
-import SchoolDropdown from "../components/schools"; // adjust path
+import SchoolDropdown from "../components/schools"; 
 
 type Attendance = {
   attendance_id: string;
@@ -450,9 +450,6 @@ const TimeTable = () => {
                 <span className="font-bold">{selectedIntern.intern_name}</span>
               </h2>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Remarks
-                </label>
                 <textarea
                   value={editRemarks}
                   onChange={(e) => setEditRemarks(e.target.value)}

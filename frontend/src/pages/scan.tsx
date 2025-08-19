@@ -1,13 +1,20 @@
+//scan.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode, type Html5QrcodeResult } from "html5-qrcode";
 import inputLogo from '../assets/input.png';
 
+interface InternInfo {
+  intern_id: string;
+  name: string;
+  school: string;
+}
+
 const Scan: React.FC = () => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [scannedResult, setScannedResult] = useState<string>('');
+  const [scannedResult, setScannedResult] = useState<InternInfo | null>(null);
   const [error, setError] = useState<string>('');
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualUID, setManualUID] = useState('');
@@ -70,8 +77,40 @@ const Scan: React.FC = () => {
       stopScanning();
     };
   }, []);
-  // registers attendance
-  const registerAttendance = async (internId: string) => {
+
+  // Separate function to get intern info by ID
+  const getInternInfo = async (internId: string): Promise<InternInfo | null> => {
+    try {
+      const response = await fetch("http://localhost:8000/intern/list");
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Intern list response:", data);
+      
+      // Find the intern by ID
+      const intern = data.result?.find((intern: any) => intern.intern_id === internId);
+      
+      if (intern) {
+        return {
+          intern_id: internId,
+          name: intern.intern_name || 'Unknown Intern',
+          school: intern.school_name || 'Unknown School'
+        };
+      } else {
+        console.warn(`Intern with ID ${internId} not found`);
+        return null;
+      }
+    } catch (err) {
+      console.error("Error fetching intern info:", err);
+      return null;
+    }
+  };
+
+  // Function to register attendance only
+  const registerAttendance = async (internId: string): Promise<boolean> => {
     try {
       const response = await fetch("http://localhost:8000/attendance/qr-scan", {
         method: "POST",
@@ -82,19 +121,25 @@ const Scan: React.FC = () => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
+      
       const data = await response.json();
-      console.log("Attendance registered:", data);
-      console.log(response)
-      return data;
+      console.log("Attendance response:", data);
+      
+      // Check if already checked out
+      if (data.message === "Already checked out today") {
+        setError("Already checked out today");
+        return false;
+      }
+      return true;
     } catch (err) {
       console.error("Error registering attendance:", err);
       setError("Failed to register attendance");
-      return null;
+      return false;
     }
   };
 
   const handleSuccessScan = async (decodedText: string, decodedResult: Html5QrcodeResult) => {
-    // Stop scanner immediately so it won't loop detections
+    // Stop scanner immediately to prevent multiple scans
     if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
@@ -106,40 +151,46 @@ const Scan: React.FC = () => {
 
     console.log(`QR Code detected: ${decodedText}`, decodedResult);
     setError('');
+    setIsProcessing(true);
 
     try {
-      const response = await fetch("http://localhost:8000/attendance/qr-scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ intern_id: decodedText })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      // First, get intern info
+      const internInfo = await getInternInfo(decodedText);
+      
+      if (!internInfo) {
+        setError("Intern not found in system");
+        setIsProcessing(false);
+        // Restart scan after delay
+        setTimeout(() => {
+          startScanning();
+        }, 3000);
+        return;
       }
 
-      const data = await response.json();
-      console.log("Attendance registered:", data);
-
-      if (data.message !== "Already checked out today") {
-        setScannedResult(decodedText);
+      // Then, register attendance
+      const attendanceSuccess = await registerAttendance(decodedText);
+      
+      if (attendanceSuccess) {
+        // Show success toast with intern info
+        setScannedResult(internInfo);
       }
+      
     } catch (err) {
-      console.error("Error registering attendance:", err);
-      setError("Failed to register attendance");
+      console.error("Error processing scan:", err);
+      setError("Failed to process QR code");
+    } finally {
+      setIsProcessing(false);
     }
 
     // Restart scan after a delay
     setTimeout(() => {
-      setScannedResult('');
+      setScannedResult(null);
       startScanning();
     }, 3000);
   };
 
-
   const handleScanError = (errorMessage: string) => {
     console.warn("QR Scan Error (ignored):", errorMessage);
-    // No longer triggering modal automatically
   };
 
   const stopScanning = async () => {
@@ -177,6 +228,49 @@ const Scan: React.FC = () => {
     }
   };
 
+  const handleManualSubmit = async () => {
+    if (!manualUID.trim()) {
+      setError("Please enter a valid UID");
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      // First, get intern info
+      const internInfo = await getInternInfo(manualUID.trim());
+      
+      if (!internInfo) {
+        setError("Intern not found in system");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Then, register attendance
+      const attendanceSuccess = await registerAttendance(manualUID.trim());
+      
+      if (attendanceSuccess) {
+        // Show success toast
+        setScannedResult(internInfo);
+        
+        // Clear the toast after 3 seconds
+        setTimeout(() => {
+          setScannedResult(null);
+        }, 3000);
+      }
+      
+    } catch (err) {
+      console.error("Error processing manual entry:", err);
+      setError("Failed to process manual entry");
+    } finally {
+      setIsProcessing(false);
+    }
+    
+    setShowManualModal(false);
+    setManualUID('');
+    startScanning();
+  };
+
   return (
     <div className="flex flex-col items-center p-4 relative">
       <div className="text-center mb-6">
@@ -194,8 +288,18 @@ const Scan: React.FC = () => {
           className="absolute top-2 right-2 p-1 bg-[#25E2CC] rounded-full shadow hover:bg-[#1eb5a3]"
           title="Enter UID manually"
         >
-          <img src={ inputLogo } className="w-5 h-5" />
+          <img src={inputLogo} className="w-5 h-5" />
         </button>
+
+        {/* Processing Overlay */}
+        {isProcessing && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md">
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+              <p>Processing...</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Error Alert */}
@@ -215,9 +319,13 @@ const Scan: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="ml-3 text-[#25E2CC] font-semibold">QR Code Scanned</span>
+              <span className="ml-3 text-[#25E2CC] font-semibold">Attendance Registered</span>
             </div>
-            <p className="text-sm text-gray-600 break-words">{scannedResult}</p>
+            <div className="ml-3 text-left text-[#253850]">
+              <p className="font-medium text-sm">Name: {scannedResult.name}</p>
+              <p className="font-regular text-xs">{scannedResult.school}</p>
+              <p className="break-words mt-1 text-xs text-gray-500">UID: {scannedResult.intern_id}</p>
+            </div>
           </div>
         </div>
       )}
@@ -242,25 +350,17 @@ const Scan: React.FC = () => {
                   startScanning();
                 }}
                 className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                disabled={isProcessing}
               >
                 Cancel
               </button>
               <button
-                onClick={async () => {
-                  const now = new Date();
-                  console.log("Manual Entry UID:", manualUID);
-                  console.log("Date:", now.toLocaleDateString());
-                  console.log("Time:", now.toLocaleTimeString());
-                  await registerAttendance(manualUID)
-                  setShowManualModal(false);
-                  setManualUID('');
-                  startScanning();
-                }}
-                className="bg-[#25E2CC] text-white px-4 py-2 rounded hover:bg-[#1eb5a3]"
+                onClick={handleManualSubmit}
+                className="bg-[#25E2CC] text-white px-4 py-2 rounded hover:bg-[#1eb5a3] disabled:opacity-50"
+                disabled={isProcessing}
               >
-                Submit
+                {isProcessing ? 'Processing...' : 'Submit'}
               </button>
-              
             </div>
           </div>
         </div>
