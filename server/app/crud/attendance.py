@@ -145,7 +145,7 @@ def checkInAttendance(session:Session, intern_id:UUID):
         "check_in": _attendance.check_in
     }
 
-def checkOutAttendance(session:Session, intern_id: UUID):
+def checkOutAttendance(session: Session, intern_id: UUID):
     # Check today's attendance
     attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
@@ -176,36 +176,32 @@ def checkOutAttendance(session:Session, intern_id: UUID):
     ).scalar() or 0
     if intern.total_hours and total_attended:
         remaining = intern.total_hours - total_attended
-        intern.time_remain = remaining  # already a timedelta
+        intern.time_remain = remaining
     else:
         intern.time_remain = intern.total_hours
-    #check_in logic
-    intern_time_in = datetime.combine(date.today(), datetime.now().time())
-    intern_time_out = datetime.combine(date.today(), datetime.now().time())
-    intern_scheduled_time_in = datetime.combine(date.today(), intern.time_in)
+
+    # --- OVERTIME LOGIC ---
     intern_scheduled_time_out = datetime.combine(date.today(), intern.time_out)
-    today = date.today()
-    check_in = None
-    # No existing record, determine based on current time vs scheduled
-    if intern_time_out < intern_scheduled_time_out - timedelta(minutes=15):
-        check_in = "Early Out"
-    elif intern_time_out > intern_scheduled_time_out + timedelta(minutes=15):
-        check_in = "Overtime"
+
+    if time_out < intern_scheduled_time_out - timedelta(minutes=15):
+        attendance.check_in = "Early Out"
+    elif time_out > intern_scheduled_time_out + timedelta(minutes=15):
+        attendance.check_in = "Overtime"
     else:
-        check_in = "Regular Hours"
+        attendance.check_in = "Regular Hours"
 
     session.commit()
-    session.refresh(intern)
+    session.refresh(attendance)
 
     if not intern:
         raise HTTPException(status_code=404, detail="Failed to check-out.")
     
-    #mark as completed
+    # Mark as completed
     if intern.time_remain <= timedelta(0) and intern.status != "Completed":
         intern.status = "Completed"
         session.commit()
         session.flush()
-        session.expire_all()  #ensures updated status is reflected
+        session.expire_all()
 
     school_interns = session.query(Intern).filter(Intern.school_name == intern.school_name).all()
     all_done = all(i.status in ["Completed", "Terminated"] for i in school_interns)
@@ -222,8 +218,9 @@ def checkOutAttendance(session:Session, intern_id: UUID):
         "time_out": attendance.time_out,
         "hours_today": attendance.total_hours,
         "remaining_hours": intern.time_remain,
-        "check_in": check_in
+        "remarks": attendance.remarks   
     }
+
 
 def registerAttendanceByQr(session: Session, intern_id: UUID):
     #check todays attendance
