@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
   Sun,
+  CloudSun,
+  Moon,
   CalendarDays,
   Clock,
   Download,
@@ -70,19 +72,31 @@ const Interns: React.FC = () => {
       time_remain: prev.total_hours, // mirror value
     }));
   }, [formData.total_hours]);
+  
   // get Intern
   const [interns, setInterns] = useState<Intern[]>([]);
+  
+  const fetchInterns = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/intern/list");
+      // Sort interns consistently by creation date, then by name
+      const sortedInterns = response.data.result.sort((a: Intern, b: Intern) => {
+        // First sort by created_at (oldest first to maintain original order)
+        const dateComparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        if (dateComparison !== 0) return dateComparison;
+        // If same date, sort by name
+        return a.intern_name.localeCompare(b.intern_name);
+      });
+      setInterns(sortedInterns);
+    } catch (error) {
+      console.error("Error fetching interns:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchInterns = async () => {
-      try {
-        const response = await axios.get("http://localhost:8000/intern/list");
-        setInterns(response.data.result);
-      } catch (error) {
-        console.error("Error fetching interns:", error);
-      }
-    };
     fetchInterns();
   }, []);
+
   // add Intern
   const [response, setResponse] = useState<{
     uuid: string;
@@ -131,7 +145,23 @@ const Interns: React.FC = () => {
         formData
       );
       setResponse(res.data.result);
-      window.location.reload();
+      // Instead of window.location.reload(), refresh data manually
+      await fetchInterns();
+      setAddInternModal(false);
+      // Reset form
+      setFormData({
+        intern_id: "",
+        intern_name: "",
+        school_name: "",
+        abbreviation: "",
+        shift_name: "",
+        time_in: "",
+        time_out: "",
+        total_hours: "",
+        time_remain: "",
+        status: "Active",
+      });
+      setHoursInput("");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed.");
@@ -191,7 +221,8 @@ const Interns: React.FC = () => {
       );
       console.log("Update success:", response.data);
       setEditModal(false); // close modal on success
-      window.location.reload();
+      // Instead of window.location.reload(), refresh data manually
+      await fetchInterns();
     } catch (err) {
       console.error("Update failed:", err);
       alert("Update failed. Check console for details.");
@@ -225,7 +256,8 @@ const Interns: React.FC = () => {
       alert("Intern deleted successfully"); // lagyan notif (parang toast)
       setShowDeleteModal(false);
       setSelectedIntern(null);
-      window.location.reload();
+      // Instead of window.location.reload(), refresh data manually
+      await fetchInterns();
     } catch (error) {
       console.error("Delete failed", error); // dito rin
       alert("Failed to delete intern");
@@ -297,6 +329,7 @@ const Interns: React.FC = () => {
     setFormData((prev) => ({ ...prev, time_out: autoTimeOut }));
   };
   const { min: timeInMin, max: timeInMax } = getTimeInRange();
+  
   // pagination
   const itemsPerPage = 5;
   const totalPages = Math.ceil(interns.length / itemsPerPage);
@@ -349,7 +382,7 @@ const Interns: React.FC = () => {
     }
   }, [totalPages, currentPage]);
 
-  // schools tab feature
+  // schools tab feature - Sort schools consistently
   const abbreviationMap = new Map<string, string>();
   interns.forEach((intern) => {
     const key = intern.abbreviation.toLowerCase();
@@ -357,13 +390,24 @@ const Interns: React.FC = () => {
       abbreviationMap.set(key, intern.abbreviation);
     }
   });
-  const uniqueSchools = Array.from(abbreviationMap.values());
+  
+  // Sort schools alphabetically for consistent order
+  const uniqueSchools = Array.from(abbreviationMap.values()).sort((a, b) => 
+    a.localeCompare(b)
+  );
+  
   useEffect(() => {
     if (uniqueSchools.length > 0 && !activeTab) {
       setActiveTab(uniqueSchools[0]);
     }
   }, [uniqueSchools, activeTab]);
-  // remove case sensitivity
+
+  //ignore the red line sa jsx n lng nagana naman sha
+  const shiftIcons: Record<string, JSX.Element> = {
+  "Day Shift": <Sun className="w-5 h-5 text-gray-600" />,
+  "Mid Shift": <CloudSun className="w-5 h-5 text-gray-600" />,
+  "Night Shift": <Moon className="w-5 h-5 text-gray-600" />,
+  };
 
   return (
     <div className="flex flex-col items-center min-h-screen px-4 relative">
@@ -374,7 +418,7 @@ const Interns: React.FC = () => {
             Intern Profile
           </p>
           <p className="text-[#969696] text-sm font-[400]">
-            Manage your interns’ information
+            Manage your interns' information
           </p>
         </div>
         <div className="py-4">
@@ -392,9 +436,9 @@ const Interns: React.FC = () => {
             {/*Add Intern*/}
             <button
               onClick={() => setAddInternModal(true)}
-              className="bg-[#25E2CC] text-white px-6 py-2 rounded-full font-semibold hover:bg-[#1eb5a3] flex items-center gap-2"
+              className="bg-[#25E2CC] text-white text-[1rem] px-6 py-2.5 rounded-xl font-semibold hover:bg-[#1eb5a3] flex items-center gap-2"
             >
-              Add Intern
+              <span> Add Intern </span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -412,7 +456,7 @@ const Interns: React.FC = () => {
             </button>
           </div>
           {/* Schools (Abbreviation) */}
-          <div className="w-full mt-10 relative drop-shadow-xl">
+          <div className="w-full mt-6 relative drop-shadow-xl">
             <div className="absolute -top-8 left-0 z-10 flex gap-2">
               {uniqueSchools.map((school) => (
                 <button
@@ -487,7 +531,7 @@ const Interns: React.FC = () => {
                     <div className="flex flex-col text-[14px] text-gray-600 pl-14 pr-2">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
-                          <Sun className="w-5 h-5 text-gray-600" />
+                          {shiftIcons[intern.shift_name] || <Sun className="w-5 h-5 text-gray-600" />}
                           <span>{intern.shift_name}</span>
                         </div>
                         <p>|</p>
@@ -499,9 +543,9 @@ const Interns: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 mt-1">
-                        <Clock className="w-5 h-5 text-gray-600" />
+                        <Clock className="w-5 h-5 text-gray-600" /> 
                         <span>
-                          {intern.time_remain}/{intern.total_hours} hours
+                          {intern.total_hours - intern.time_remain}/{intern.total_hours} hours
                         </span>
                       </div>
                     </div>
@@ -631,7 +675,7 @@ const Interns: React.FC = () => {
           {showAddInternModal && (
             <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
               <div className="bg-white p-6 rounded-xl w-full max-w-xl relative">
-                <h2 className="text-xl font-[650] mb-4 text-[#0D223D]">
+                <h2 className="text-xl font-[600] mb-4 text-[#0D223D]">
                   Add Intern
                 </h2>
                 {/* Form Start */}

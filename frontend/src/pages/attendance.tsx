@@ -5,7 +5,7 @@ import Pagination from "../components/pagination"; // Import the pagination comp
 import ExportButton from "../components/exportbutton"; // Import the ExportButton component
 import CalendarComponent from "../components/calendar"; // Import the new calendar component
 import axios from "axios";
-import SchoolTabs from "../components/schools"; // adjust path
+import SchoolDropdown from "../components/schools"; // adjust path
 
 type Attendance = {
   attendance_id: string;
@@ -224,6 +224,7 @@ const TimeTable = () => {
       console.error("Error deleting attendance:", error.message);
     }
   };
+
   // fetch data from db (attendance)
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -285,12 +286,16 @@ const TimeTable = () => {
               width="w-80"
             />
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">FILTER BY DATE</span>
+              <div className="flex items-center space-x-1">
+                <SchoolDropdown
+                  data={attendanceData}
+                  activeSchool={activeTab}
+                  onSchoolChange={setActiveTab}
+                />
                 <div className="relative" ref={calendarRef}>
                   <button
                     onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                    className="calendar-button border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-2 focus:ring-teal-500 shadow-md flex items-center space-x-2 bg-white hover:bg-gray-50 transition-colors"
+                    className="calendar-button border border-gray-200 rounded-2xl px-4 py-2 text-sm focus:ring-1 focus:ring-teal-500 shadow-md flex items-center space-x-2 bg-white hover:bg-gray-50 transition-colors"
                   >
                     <Calendar className="w-4 h-4 text-gray-600" />
                     <span className="text-gray-700">
@@ -312,7 +317,7 @@ const TimeTable = () => {
               </div>
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
-                  data={filteredData}
+                   data={filteredData.map((row, i) => ({ ...row, id: i + 1 }))}
                   headers={[
                     "ID",
                     "Name",
@@ -326,8 +331,8 @@ const TimeTable = () => {
                   ]}
                   filename="attendance_report"
                   title="Attendance Report"
-                  formatRowData={(row, index) => [
-                    index + 1,
+                  formatRowData={(row) => [
+                    row.id,
                     row.intern_name,
                     row.abbreviation,
                     row.attendance_date,
@@ -342,14 +347,8 @@ const TimeTable = () => {
             </div>
           </div>
         </div>
-        {/*  */}
-        <SchoolTabs
-          data={attendanceData}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
 
-        <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
+        <div className="mx-6 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="min-w-full text-sm text-left text-gray-700 table-auto">
             <thead className="bg-white text-gray-600 border-b">
               <tr>
