@@ -83,22 +83,57 @@ const TimeTable = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Function to parse date strings and compare them
-  const parseDate = (dateStr: string) => {
-    const [month, day, year] = dateStr.split(' ');
-    const monthMap: { [key: string]: number } = {
-      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
-    };
-    return new Date(parseInt(year), monthMap[month], parseInt(day.replace(',', '')));
+  // Fetch attendance data based on selected date or all data
+  const fetchAttendance = async (targetDate?: Date) => {
+    try {
+      setLoading(true);
+      let response;
+      
+      if (targetDate) {
+        // Format date as YYYY-MM-DD for the API (avoid timezone issues)
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const day = String(targetDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        
+        console.log('Selected date:', targetDate);
+        console.log('Formatted date for API:', formattedDate);
+        
+        response = await axios.get(`http://localhost:8000/attendance/timesheet/by-date?target_date=${formattedDate}`);
+      } else {
+        // Fetch all attendance data
+        response = await axios.get("http://localhost:8000/attendance/timesheet");
+      }
+      
+      setAttendanceData(response.data.result);
+      setLoading(false);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Failed to fetch attendance:", error);
+      setLoading(false);
+      // If no data found for specific date, you might want to show empty state
+      if (targetDate) {
+        setAttendanceData([]);
+      }
+    }
   };
 
-  const isSameDay = (date1: Date | null, date2: Date | null) => {
-    if (!date1 || !date2) return false;
-    return date1.toDateString() === date2.toDateString();
-  };
+  // Initial data fetch
+  useEffect(() => {
+    fetchAttendance();
+  }, []);
 
-  // Use attendanceData instead of data for filtering
+  // Fetch data when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      fetchAttendance(selectedDate);
+    } else {
+      // If no date selected, fetch all data
+      fetchAttendance();
+    }
+  }, [selectedDate]);
+
+  // Use attendanceData for filtering (now filtered by date on backend)
   const filteredData = attendanceData
     .filter((intern) => 
       intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
@@ -108,12 +143,7 @@ const TimeTable = () => {
         intern.intern_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         intern.check_in.toLowerCase().includes(searchTerm.toLowerCase()) ||
         intern.attendance_date.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .filter((intern) => {
-      if (!selectedDate) return true;
-      const internDate = parseDate(formatDate(intern.attendance_date));
-      return isSameDay(internDate, selectedDate);
-  });
+    );
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -225,22 +255,6 @@ const TimeTable = () => {
     }
   };
 
-  // fetch data from db (attendance)
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      try {
-        const response = await axios.get("http://localhost:8000/attendance/timesheet");
-        setAttendanceData(response.data.result); // assuming `result` contains the list
-        setLoading(false);
-        console.log(response.data);
-      } catch (error) {
-        console.error("Failed to fetch attendance:", error);
-        setLoading(false);
-      }
-    };
-    fetchAttendance();
-  }, []);
-
   // Format date from "2025-08-12T00:00:00" → "Aug 12, 2025"
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -264,6 +278,11 @@ const TimeTable = () => {
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = (seconds % 60).toFixed(2); // keep milliseconds
     return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.padStart(6, "0")}`;
+  };
+
+  // Clear date filter function
+  const clearDateFilter = () => {
+    setSelectedDate(null);
   };
 
   return (
@@ -314,6 +333,16 @@ const TimeTable = () => {
                     </div>
                   )}
                 </div>
+                
+                {/* Clear date filter button */}
+                {selectedDate && (
+                  <button
+                    onClick={clearDateFilter}
+                    className="border border-gray-200 rounded-2xl px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Clear Date
+                  </button>
+                )}
               </div>
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
@@ -348,63 +377,79 @@ const TimeTable = () => {
           </div>
         </div>
 
-        <div className="mx-6 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
-          <table className="min-w-full text-sm text-left text-gray-700 table-auto">
-            <thead className="bg-white text-gray-600 border-b">
-              <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Intern Name</th>
-                <th className="px-4 py-3 text-center">University</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Time in</th>
-                <th className="px-4 py-3">Time out</th>
-                <th className="px-4 py-3">Total hours</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Remarks</th>
-                <th className="px-4 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedData.map((intern, index) => (
-                <tr
-                  key={intern.attendance_id || startIndex + index}
-                  className="border-b hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3">{startIndex + index + 1}</td>
-                  <td className="px-4 py-3 font-bold">{intern.intern_name}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-normal">
-                      {intern.abbreviation}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{formatDate(intern.attendance_date)}</td>
-                  <td className="px-4 py-3">{intern.time_in ? formatTime(intern.time_in) : ""}</td>
-                  <td className="px-4 py-3">{intern.time_out ? formatTime(intern.time_out) : ""}</td>
-                  <td className="px-4 py-3">{intern.total_hours ? formatDuration(intern.total_hours) : "00:00:00"}</td>
-                  <td className="px-4 py-3">{intern.check_in}</td>
-                  <td className="px-4 py-3">{intern.remarks}</td>
-                  <td className="px-4 py-3 relative">
-                    <button
-                      className="action-button flex items-center text-sm text-gray-600 hover:text-cyan-600"
-                      onClick={(e) => handleActionButtonClick(e, index)}
+        {/* Loading state */}
+        {loading ? (
+          <div className="mx-6 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white p-8">
+            <div className="text-center text-gray-500">Loading attendance data...</div>
+          </div>
+        ) : (
+          <div className="mx-6 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
+            {filteredData.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No attendance records found{selectedDate && ` for ${formatSelectedDate(selectedDate)}`}.
+              </div>
+            ) : (
+              <table className="min-w-full text-sm text-left text-gray-700 table-auto">
+                <thead className="bg-white text-gray-600 border-b">
+                  <tr>
+                    <th className="px-4 py-3">ID</th>
+                    <th className="px-4 py-3">Intern Name</th>
+                    <th className="px-4 py-3 text-center">University</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Time in</th>
+                    <th className="px-4 py-3">Time out</th>
+                    <th className="px-4 py-3">Total hours</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Remarks</th>
+                    <th className="px-4 py-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedData.map((intern, index) => (
+                    <tr
+                      key={intern.attendance_id || startIndex + index}
+                      className="border-b hover:bg-gray-50"
                     >
-                      <Ellipsis className="w-8 h-8" strokeWidth={1} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          startIndex={startIndex}
-          endIndex={Math.min(startIndex + itemsPerPage, filteredData.length)}
-          totalEntries={filteredData.length}
-          itemsPerPage={itemsPerPage}
-        />
+                      <td className="px-4 py-3">{startIndex + index + 1}</td>
+                      <td className="px-4 py-3 font-bold">{intern.intern_name}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-normal">
+                          {intern.abbreviation}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">{formatDate(intern.attendance_date)}</td>
+                      <td className="px-4 py-3">{intern.time_in ? formatTime(intern.time_in) : ""}</td>
+                      <td className="px-4 py-3">{intern.time_out ? formatTime(intern.time_out) : ""}</td>
+                      <td className="px-4 py-3">{intern.total_hours ? formatDuration(intern.total_hours) : "00:00:00"}</td>
+                      <td className="px-4 py-3">{intern.check_in}</td>
+                      <td className="px-4 py-3">{intern.remarks}</td>
+                      <td className="px-4 py-3 relative">
+                        <button
+                          className="action-button flex items-center text-sm text-gray-600 hover:text-cyan-600"
+                          onClick={(e) => handleActionButtonClick(e, index)}
+                        >
+                          <Ellipsis className="w-8 h-8" strokeWidth={1} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+        
+        {!loading && filteredData.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            startIndex={startIndex}
+            endIndex={Math.min(startIndex + itemsPerPage, filteredData.length)}
+            totalEntries={filteredData.length}
+            itemsPerPage={itemsPerPage}
+          />
+        )}
         
         {/* Dropdown menu rendered outside the table */}
         {actionMenuIndex !== null && (

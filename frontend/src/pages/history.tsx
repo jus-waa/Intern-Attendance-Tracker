@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
 import SearchComponent from "../components/search";
 import ExportButton from "../components/exportbutton";
+import { Trash2 } from "lucide-react"; // icon for delete
 import SchoolDropdown from "../components/schools"; 
 
 type InternData = {
@@ -56,14 +57,20 @@ const InternHistoryPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-  if (activeSchool === "All") {
-    setInternData(internData);
-  } else {
-    setInternData(
-      internData.filter((intern) => intern.school_name === activeSchool)
-    );
-  }
-}, [activeSchool, internData]);
+    fetch("http://127.0.0.1:8000/history/transfer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Auto transfer result:", data);
+      })
+      .catch(err => {
+        console.error("Error during auto transfer:", err);
+      });
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -101,7 +108,6 @@ const InternHistoryPage: React.FC = () => {
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   // Export functions
-
   const exportToPDF = () => {
     // Create a simple PDF-like content (HTML to be printed as PDF)
     const printWindow = window.open("", "_blank");
@@ -210,6 +216,40 @@ const InternHistoryPage: React.FC = () => {
     }
   };
 
+  // inside InternHistoryPage
+  const handleDeleteBySchool = async (abbreviation: string) => {
+    if (!window.confirm(`Are you sure you want to delete all interns from ${abbreviation}?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:8000/history/school/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ abbreviation }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete records.");
+      }
+
+      const data = await res.json();
+      console.log("Delete response:", data);
+
+      // Update UI by filtering out deleted records
+      setInternData((prev) =>
+        prev.filter((intern) => intern.abbreviation !== abbreviation)
+      );
+
+      alert(`All records from ${abbreviation} removed successfully.`);
+    } catch (err) {
+      console.error("Error deleting records:", err);
+      alert("Error deleting records. Check console.");
+    }
+  };
+  
   return (
     <div className="min-h-screen">
       {/* Main Content */}
@@ -337,7 +377,7 @@ const InternHistoryPage: React.FC = () => {
                         ? "border-b border-gray-200"
                         : ""
                     }`}
-                  > 
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
                       {startIndex + index + 1}
                     </td>
@@ -364,11 +404,21 @@ const InternHistoryPage: React.FC = () => {
                         {intern.status}
                       </span>
                     </td>
+                    {/* Delete Button */}
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() => handleDeleteBySchool(intern.abbreviation)}
+                        className="text-red-600 hover:text-red-800 transition"
+                        title={`Delete all interns from ${intern.abbreviation}`}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="text-gray-500">
                       <p className="text-lg font-medium">No entries found</p>
                       <p className="text-sm mt-1">
