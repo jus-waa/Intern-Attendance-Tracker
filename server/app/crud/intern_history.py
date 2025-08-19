@@ -35,7 +35,6 @@ def getInternHistoryBySchool(session: Session, abbreviation: str):
         raise HTTPException(status_code=404, detail=f"No intern history found for school: {abbreviation}")
     return finished_interns
 
-
 def transferAllSchoolsToHistory(session: Session):
     try:
         # Get all unique school abbreviations in interns table

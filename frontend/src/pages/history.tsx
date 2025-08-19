@@ -19,7 +19,7 @@ type InternData = {
 
 const InternHistoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("");
+  const [activeTab, setActiveTab] = useState("All");
   const [sortBy, setSortBy] = useState("University");
   const [currentPage, setCurrentPage] = useState(1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -92,7 +92,7 @@ const InternHistoryPage: React.FC = () => {
   // Use attendanceData instead of data for filtering
   const filteredData = internData
     .filter((intern) => 
-      intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
+      activeTab === "All" || intern.abbreviation.toLowerCase() === activeTab.toLowerCase()
     )
     .filter(
       (intern) =>
