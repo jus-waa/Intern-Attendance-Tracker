@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import List, Dict
 from collections import defaultdict
 from app.utils.db import get_db
-from app.schemas.intern_history_schema import InternHistorySchema, ResInternHistory, ReqTransferInternHistory
+from app.schemas.intern_history_schema import InternHistorySchema, ResInternHistory, ReqTransferInternHistory, AbbreviationRequest
 from app.crud import intern_history
 from app.utils.helper import convert_total_hours
 
@@ -34,14 +34,14 @@ async def getBySchool(abbreviation: str, session: Session = Depends(get_db)):
     ).model_dump(exclude_none=True)
 
 #archive interns from a school (only when all are completed/terminated)
-@router.post("/transfer/{abbreviation}")
-async def transferCompletedToHistory(abbreviation: str, session: Session = Depends(get_db)):
-    result = intern_history.transferSchoolToHistory(session, abbreviation)
+@router.post("/transfer")
+async def transferAllCompletedToHistory(session: Session = Depends(get_db)):
+    result = intern_history.transferAllSchoolsToHistory(session)
     return ResInternHistory(
         code="201",
         status="Created",
         message=result["message"],
-        result=result["message"]
+        result=result["transferred"]
     ).model_dump(exclude_none=True)
 
 @router.delete("/school/delete")

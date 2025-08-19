@@ -36,51 +36,63 @@ def getInternHistoryBySchool(session: Session, abbreviation: str):
     return finished_interns
 
 
-def transferSchoolToHistory(session: Session, abbreviation: str):
-    #check if any interns from this school are still Active
-    active_interns = session.query(Intern).filter(
-        Intern.abbreviation == abbreviation,
-        Intern.status.notin_(["Completed", "Terminated"])
-    ).count()
-    #check active intern
-    if active_interns > 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Not all interns from {abbreviation} are done yet. {active_interns} remaining."
-        )
-    #get all interns that are Completed or Terminated
-    finished_interns = session.query(Intern).filter(
-        Intern.abbreviation == abbreviation,
-        Intern.status.in_(["Completed", "Terminated"])
-    ).all()
-    
+def transferAllSchoolsToHistory(session: Session):
     try:
-        #transfer each intern to intern_history
-        for intern in finished_interns:
-            history = InternHistory(
-                intern_id=intern.intern_id,
-                intern_name=intern.intern_name,
-                school_name=intern.school_name,
-                abbreviation=intern.abbreviation,
-                shift_name=intern.shift_name,
-                total_hours=intern.total_hours,
-                status=intern.status
-            )
-        session.add(history)
-        #delete on intern table
-        for intern in finished_interns:
-            session.delete(intern)
-            
+        # Get all unique school abbreviations in interns table
+        abbreviations = session.query(Intern.abbreviation).distinct().all()
+        abbreviations = [abbr[0] for abbr in abbreviations]  # unpack tuples
+
+        transferred_summary = {}
+
+        for abbreviation in abbreviations:
+            # Check if any interns are still active for this school
+            active_interns = session.query(Intern).filter(
+                Intern.abbreviation == abbreviation,
+                Intern.status.notin_(["Completed", "Terminated"])
+            ).count()
+
+            if active_interns > 0:
+                continue  # skip schools that still have active interns
+
+            # Get all completed/terminated interns
+            finished_interns = session.query(Intern).filter(
+                Intern.abbreviation == abbreviation,
+                Intern.status.in_(["Completed", "Terminated"])
+            ).all()
+
+            if not finished_interns:
+                continue
+
+            # Transfer each intern to history
+            for intern in finished_interns:
+                history = InternHistory(
+                    intern_id=intern.intern_id,
+                    intern_name=intern.intern_name,
+                    school_name=intern.school_name,
+                    abbreviation=intern.abbreviation,
+                    shift_name=intern.shift_name,
+                    total_hours=intern.total_hours,
+                    status=intern.status
+                )
+                session.add(history)
+
+            # Delete from intern table
+            for intern in finished_interns:
+                session.delete(intern)
+
+            transferred_summary[abbreviation] = len(finished_interns)
+
         session.commit()
+
         return {
-            "message": f"Transferred {len(finished_interns)} interns from {abbreviation} to intern history.",
-            "count": len(finished_interns)
+            "message": "Auto-transferred completed/terminated interns for eligible schools.",
+            "transferred": transferred_summary
         }
 
     except SQLAlchemyError as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Database error during transfer: {str(e)}")
-
+    
 def deleteAllBySchool(session: Session, abbreviation: str):
     _intern_history = getInternHistoryBySchool(session=session, abbreviation=abbreviation)
     

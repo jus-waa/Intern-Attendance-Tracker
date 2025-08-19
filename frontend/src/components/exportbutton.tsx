@@ -45,8 +45,8 @@ const ExportButton = ({
             body { font-family: Arial, sans-serif; margin: 20px; }
             table { border-collapse: collapse; width: 100%; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #253850; color:#ffffff; }
-            h1 { color: #253850; }
+            th { background-color: #f2f2f2; }
+            h1 { color: #333; }
           </style>
         </head>
         <body>
@@ -136,7 +136,7 @@ const ExportButton = ({
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-2xl shadow-lg z-10 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-2xl shadow-lg z-10 overflow-hidden">
           <button
             onClick={exportToPDF}
             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
