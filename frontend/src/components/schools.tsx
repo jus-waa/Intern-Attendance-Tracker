@@ -1,3 +1,4 @@
+//schools.tsx
 import React, { useEffect, useState, useRef } from "react";
 import { ChevronDown, University } from "lucide-react";
 

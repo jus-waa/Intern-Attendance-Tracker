@@ -18,6 +18,12 @@ type InternData = {
   total_hours: string;
 }
 
+type DeleteModalProps = {
+  abbreviation: string;
+  onConfirm: (abbr: string) => void;
+  onClose: () => void;
+};
+
 const InternHistoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All");
@@ -28,6 +34,46 @@ const InternHistoryPage: React.FC = () => {
   const [activeSchool, setActiveSchool] = useState<string>("All"); 
   const itemsPerPage = 10;
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleDeleteBySchool = async (abbreviation: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:8000/history/school/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ abbreviation }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(`Failed to delete records: ${errorData?.message || res.statusText}`);
+      }
+
+      const data = await res.json();
+      console.log("Delete response:", data);
+
+      // Update state
+      setInternData((prev) =>
+        prev.filter((intern) => intern.abbreviation.toLowerCase() !== abbreviation.toLowerCase())
+      );
+
+      if (activeSchool.toLowerCase() === abbreviation.toLowerCase()) {
+        setActiveSchool("All");
+      }
+
+      setCurrentPage(1);
+      alert(`All records from ${abbreviation} removed successfully.`);
+    } catch (err) {
+      console.error("Error deleting records:", err);
+      alert(`Error deleting records: ${err instanceof Error ? err.message : "Unknown error"}`);
+    } finally {
+      setLoading(false);  
+      setShowDeleteModal(false);
+    }
+  };
+
 
   // Fetch data from backend
   useEffect(() => {
@@ -118,38 +164,6 @@ const InternHistoryPage: React.FC = () => {
         return "bg-gray-500";
     }
   };
-const handleDeleteBySchool = async (abbreviation: string) => {
-  if (!window.confirm(`Are you sure you want to delete ALL interns from ${abbreviation}?`)) {
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:8000/history/school/delete", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ abbreviation }), // send in body
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to delete records.");
-    }
-
-    const data = await res.json();
-    console.log("Delete response:", data);
-
-    // Remove all interns from that school from state
-    setInternData((prev) =>
-      prev.filter((intern) => intern.abbreviation.toLowerCase() !== abbreviation.toLowerCase())
-    );
-
-    alert(`All records from ${abbreviation} removed successfully.`);
-  } catch (err) {
-    console.error("Error deleting records:", err);
-    alert("Error deleting records. Check console.");
-  }
-};
 
   return (
     <div className="min-h-screen">
@@ -161,7 +175,7 @@ const handleDeleteBySchool = async (abbreviation: string) => {
             Intern History
           </p>
           <p className="text-[#969696] text-sm font-[400]">
-            Track your previous interns’ information
+            Track your previous interns' information
           </p>
         </div>
 
@@ -224,44 +238,30 @@ const handleDeleteBySchool = async (abbreviation: string) => {
             </div>
           </div>
         </div>
-        
         {/* Delete All by School */}
-        <div className="flex place-content-end mr-3">
-            {activeSchool !== "All" && (
-                <button
-                  onClick={() => handleDeleteBySchool(activeSchool)}
-                  className="flex items-center px-4 py-2 text-gray-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete All ({activeSchool})
-                </button>
-            )}
+        <div className="flex justify-end mr-6 mb-2">
+          {activeSchool !== "All" && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete All from {activeSchool}
+            </button>
+          )}
         </div>
 
-              
         {/* Table */}
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left text-sm text-gray-600 tracking-wider">
-                <th className="px-6 py-4">
-                  ID
-                </th>
-                <th className="px-6 py-4">
-                  Name
-                </th>
-                <th className="px-6 py-4">
-                  University
-                </th>
-                <th className="px-6 py-4">
-                  Shift Schedule
-                </th>
-                <th className="px-6 py-4">
-                  Completed Hours
-                </th>
-                <th className="px-6 py-4">
-                  Status
-                </th>
+                <th className="px-6 py-4">ID</th>
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">University</th>
+                <th className="px-6 py-4">Shift Schedule</th>
+                <th className="px-6 py-4">Completed Hours</th>
+                <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -281,8 +281,8 @@ const handleDeleteBySchool = async (abbreviation: string) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">
                       {intern.intern_name}
                     </td>
-                    <td className="flex px-6 py-4 whitespace-nowrap self-center">
-                      <span className="ml-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
                         {intern.abbreviation}
                       </span>
                     </td>
@@ -292,7 +292,7 @@ const handleDeleteBySchool = async (abbreviation: string) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
                       {intern.total_hours} hours
                     </td>
-                    <td className="flex px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-full text-white ${getStatusColor(
                           intern.status
@@ -300,16 +300,6 @@ const handleDeleteBySchool = async (abbreviation: string) => {
                       >
                         {intern.status}
                       </span>
-                    </td>
-                    {/* Delete Button */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        onClick={() => handleDeleteBySchool(intern.abbreviation)}
-                        className="text-red-600 hover:text-red-800 transition"
-                        title={`Delete all interns from ${intern.abbreviation}`}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
                     </td>
                   </tr>
                 ))
@@ -328,6 +318,36 @@ const handleDeleteBySchool = async (abbreviation: string) => {
             </tbody>
           </table>
         </div>
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-lg p-6 w-[90%] max-w-md">
+              <h2 className="text-lg font-semibold mb-4 text-center">
+                Are you sure you want to delete all interns from{" "}
+                <span className="font-bold">{activeSchool}</span>?
+              </h2>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteBySchool(activeSchool)}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-md text-white transition ${
+                    loading
+                      ? "bg-red-300 cursor-not-allowed"
+                      : "bg-red-500 hover:bg-[#7c1b1b]"
+                  }`}
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Pagination */}
         <div className="mx-6 mb-6">
@@ -341,6 +361,7 @@ const handleDeleteBySchool = async (abbreviation: string) => {
             itemsPerPage={itemsPerPage}
           />
         </div>
+        
       </div>
     </div>
   );

@@ -99,7 +99,6 @@ def deleteAllBySchool(session: Session, abbreviation: str):
 
     session.commit()
     return {"deleted_count": deleted}
-
     
 def deleteOldInternHistory(session: Session):
     # Records older than 30 days from today

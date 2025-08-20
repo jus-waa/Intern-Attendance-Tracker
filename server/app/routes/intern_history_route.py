@@ -4,7 +4,7 @@ from uuid import UUID
 from typing import List, Dict
 from collections import defaultdict
 from app.utils.db import get_db
-from app.schemas.intern_history_schema import InternHistorySchema, ResInternHistory, ReqTransferInternHistory, AbbreviationRequest
+from app.schemas.intern_history_schema import ResInternHistory, ReqDeleteBySchool
 from app.crud import intern_history
 from app.utils.helper import convert_total_hours
 
@@ -43,14 +43,14 @@ async def transferAllCompletedToHistory(session: Session = Depends(get_db)):
         message=result["message"],
         result=result["transferred"]
     ).model_dump(exclude_none=True)
-
+    
 @router.delete("/school/delete")
-async def removeHistoryBySchool(abbreviation: str, session: Session = Depends(get_db)):
-    _intern_history = intern_history.deleteAllBySchool(session, abbreviation=abbreviation)
+async def removeHistoryBySchool( req: ReqDeleteBySchool, session: Session = Depends(get_db)):
+    _intern_history = intern_history.deleteAllBySchool(session, abbreviation=req.abbreviation)
     return ResInternHistory(
         code="200",
         status="Ok",
-        message=f"All interns from {abbreviation} removed successfully.",
+        message=f"All interns from {req.abbreviation} removed successfully.",
         result=_intern_history
     ).model_dump(exclude_none=True)
 

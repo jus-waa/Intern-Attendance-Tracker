@@ -28,3 +28,6 @@ class ResInternHistory(BaseModel, Generic[T]):
 
 class AbbreviationRequest(BaseModel):
     abbreviation: str
+    
+class ReqDeleteBySchool(BaseModel):
+    abbreviation: str
