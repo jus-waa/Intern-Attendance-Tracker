@@ -32,9 +32,10 @@ class ReqInternID(BaseModel):
 
 class ReqUpdateAttendance(BaseModel):
     intern_id: UUID
+    intern_name: str
     time_out: Optional[time] = None
-    remarks: str
-#response for any type of data
+    remarks: Optional[str] = None
+ #response for any type of data
 #similar to status.json in express
 class ResAttendance(BaseModel, Generic[T]):
     code: str

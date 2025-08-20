@@ -1,8 +1,6 @@
 //history.tsx
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
 import Pagination from "../components/pagination";
-import SearchComponent from "../components/search";
 import ExportButton from "../components/exportbutton";
 import { Trash2 } from "lucide-react"; // icon for delete
 import SchoolDropdown from "../components/schools"; 
@@ -17,12 +15,6 @@ type InternData = {
   abbreviation: string;
   total_hours: string;
 }
-
-type DeleteModalProps = {
-  abbreviation: string;
-  onConfirm: (abbr: string) => void;
-  onClose: () => void;
-};
 
 const InternHistoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -73,7 +65,6 @@ const InternHistoryPage: React.FC = () => {
       setShowDeleteModal(false);
     }
   };
-
 
   // Fetch data from backend
   useEffect(() => {
@@ -163,7 +154,7 @@ const InternHistoryPage: React.FC = () => {
       default:
         return "bg-gray-500";
     }
-  };
+  }; 
 
   return (
     <div className="min-h-screen">
@@ -175,42 +166,19 @@ const InternHistoryPage: React.FC = () => {
             Intern History
           </p>
           <p className="text-[#969696] text-sm font-[400]">
-            Track your previous interns' information
+            Track your previous interns’ information
           </p>
         </div>
 
         {/* Search and Controls */}
         <div className="bg-white px-6 py-4">
-          <div className="flex items-center justify-between">
-            <SearchComponent
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              placeholder="Search..."
-              width="w-80"
-            />
-
+          <div className="flex flex-row-reverse items-center justify-between">
             <div className="flex items-center space-x-4">
               <SchoolDropdown
                 data={internData} // pass the full internData
                 activeSchool={activeSchool}
                 onSchoolChange={setActiveSchool}
               />
-
-              <div className="relative inline-block">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="border border-gray-200 rounded-2xl px-4 py-2 pr-10 text-sm 
-                            focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-md appearance-none"
-                >
-                  <option value="Name">Name</option>
-                  <option value="Shift">Shift</option>
-                  <option value="Status">Status</option>
-                </select>
-                <ChevronDown
-                  className="w-4 h-4 text-gray-500 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                />
-              </div>
 
               <div className="relative" ref={dropdownRef}>
                 <ExportButton
@@ -238,6 +206,7 @@ const InternHistoryPage: React.FC = () => {
             </div>
           </div>
         </div>
+        
         {/* Delete All by School */}
         <div className="flex justify-end mr-6 mb-2">
           {activeSchool !== "All" && (
@@ -250,18 +219,30 @@ const InternHistoryPage: React.FC = () => {
             </button>
           )}
         </div>
-
+          
         {/* Table */}
         <div className="mx-6 my-4 rounded-3xl shadow-sm border border-gray-200 overflow-hidden bg-white">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left text-sm text-gray-600 tracking-wider">
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">University</th>
-                <th className="px-6 py-4">Shift Schedule</th>
-                <th className="px-6 py-4">Completed Hours</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">
+                  ID
+                </th>
+                <th className="px-6 py-4">
+                  Name
+                </th>
+                <th className="px-6 py-4">
+                  University
+                </th>
+                <th className="px-6 py-4">
+                  Shift Schedule
+                </th>
+                <th className="px-6 py-4">
+                  Completed Hours
+                </th>
+                <th className="px-6 py-4">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -281,8 +262,8 @@ const InternHistoryPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">
                       {intern.intern_name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
+                    <td className="flex px-6 py-4 whitespace-nowrap self-center">
+                      <span className="ml-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
                         {intern.abbreviation}
                       </span>
                     </td>
@@ -292,7 +273,7 @@ const InternHistoryPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-left">
                       {intern.total_hours} hours
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="flex px-6 py-4 whitespace-nowrap text-center">
                       <span
                         className={`px-2 py-1 text-xs font-semibold rounded-full text-white ${getStatusColor(
                           intern.status
@@ -348,7 +329,6 @@ const InternHistoryPage: React.FC = () => {
             </div>
           </div>
         )}
-
         {/* Pagination */}
         <div className="mx-6 mb-6">
           <Pagination
@@ -361,7 +341,6 @@ const InternHistoryPage: React.FC = () => {
             itemsPerPage={itemsPerPage}
           />
         </div>
-        
       </div>
     </div>
   );

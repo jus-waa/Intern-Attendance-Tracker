@@ -74,6 +74,7 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
 
     _attendance = attendance.updateAttendance(session,
                                             intern_id=request.intern_id,
+                                            intern_name=request.intern_name,
                                             remarks=request.remarks,
                                             total_hours=total_hours
                                             )

@@ -1,5 +1,6 @@
 //interns.tsx
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation } from 'react-router-dom';
 import axios from "axios";
 import {
   Sun,
@@ -51,6 +52,13 @@ const Interns: React.FC = () => {
   const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
   const [loading, setLoading] = useState(false);
   const statusOptions = ["Active", "Completed", "Terminated"];
+  
+  const location = useLocation();
+  useEffect(() => {
+  if (location.state?.openModal) {
+  setAddInternModal(true);
+  }
+  }, [location.state]);
 
   // form data for adding intern
   const [formData, setFormData] = useState<InternEdit>({
@@ -146,9 +154,10 @@ const Interns: React.FC = () => {
         formData
       );
       setResponse(res.data.result);
-      // Instead of window.location.reload(), refresh data manually
-      await fetchInterns();
       setAddInternModal(false);
+      //window.location.reload()
+      await fetchInterns();
+
       // Reset form
       setFormData({
         intern_id: "",
@@ -168,10 +177,12 @@ const Interns: React.FC = () => {
       setError(err.response?.data?.detail || "Registration failed.");
     }
   };
+
   const convertHoursToHHMMSS = (hours: number): string => {
     const h = String(Math.floor(hours)).padStart(2, "0");
     return `${h}:00:00`;
   };
+
   // edit Intern
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openEditModal = (intern: any) => {
@@ -222,7 +233,7 @@ const Interns: React.FC = () => {
       );
       console.log("Update success:", response.data);
       setEditModal(false); // close modal on success
-      // Instead of window.location.reload(), refresh data manually
+      window.location.reload()
       await fetchInterns();
     } catch (err) {
       console.error("Update failed:", err);
@@ -257,7 +268,7 @@ const Interns: React.FC = () => {
       alert("Intern deleted successfully"); // lagyan notif (parang toast)
       setShowDeleteModal(false);
       setSelectedIntern(null);
-      // Instead of window.location.reload(), refresh data manually
+      window.location.reload()
       await fetchInterns();
     } catch (error) {
       console.error("Delete failed", error); // dito rin
@@ -283,11 +294,11 @@ const Interns: React.FC = () => {
   const getTimeInRange = () => {
     switch (formData.shift_name) {
       case "Day Shift":
-        return { min: "06:00", max: "17:00" }; // 6 AM to 5 PM
+        return { min: "06:00", max: "09:00" };
       case "Mid Shift":
-        return { min: "10:00", max: "19:00" }; // 10 AM to 7 PM
+        return { min: "10:00", max: "13:00" }; 
       case "Night Shift":
-        return { min: "22:00", max: "07:00" }; // 6 PM to 7 AM (crosses midnight)
+        return { min: "21:00", max: "24:00" }; 
       default:
         return { min: "", max: "" };
     }
@@ -425,15 +436,6 @@ const Interns: React.FC = () => {
         <div className="py-4">
           {/*Search and Add button*/}
           <div className="w-full flex justify-end items-center gap-2 mb-1 text-sm">
-            {/*Search*/}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="font-xs px-4 py-2 border rounded-full w-64 shadow-md focus:outline-none focus:ring-2"
-              />
-              <Search className="w-5 h-5 text-gray-600 absolute right-3 top-1/2 transform -translate-y-1/2" />
-            </div>
             {/*Add Intern*/}
             <button
               onClick={() => setAddInternModal(true)}
@@ -527,7 +529,6 @@ const Interns: React.FC = () => {
                         </span>
                       </div>
                     </div>
-
                     {/* Shift name, time in, time out, time remain, total hours */}
                     <div className="flex flex-col text-[14px] text-gray-600 pl-14 pr-2">
                       <div className="flex items-center gap-4">

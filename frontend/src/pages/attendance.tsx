@@ -1,7 +1,6 @@
 //attendance.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { Ellipsis, ChevronDown, Calendar } from "lucide-react";
-import SearchComponent from "../components/search"; 
 import Pagination from "../components/pagination"; 
 import ExportButton from "../components/exportbutton"; 
 import CalendarComponent from "../components/calendar"; 
@@ -182,7 +181,7 @@ const TimeTable = () => {
 
   const handleEdit = (intern: Attendance) => {
     setSelectedIntern(intern);
-    setEditRemarks(intern.remarks);
+    setEditRemarks(intern.remarks ?? "");
     setEditModal(true);
   };
 
@@ -192,8 +191,10 @@ const TimeTable = () => {
     try {
       const payload = {
         intern_id: selectedIntern.intern_id,
+        intern_name: selectedIntern.intern_name, 
         remarks: editRemarks || undefined
       };
+
      
       const response = await fetch("http://localhost:8000/attendance/timesheet/edit", {
         method: "PATCH",
@@ -217,12 +218,12 @@ const TimeTable = () => {
             : item
         );
       
-      setData(updateData);
-      setAttendanceData(updateData);
-     
       setEditModal(false);
       setSelectedIntern(null);
       setEditRemarks("");
+      setData(updateData);
+      setAttendanceData(updateData);
+     
     } catch (error: any) {
       console.error("Error updating attendance:", error.message);
     }
@@ -298,13 +299,7 @@ const TimeTable = () => {
           </p>
         </div>
         <div className="bg-white px-6 py-4">
-          <div className="flex items-center justify-between">
-            <SearchComponent
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              placeholder="Search..."
-              width="w-80"
-            />
+          <div className="flex flex-row-reverse items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <SchoolDropdown
