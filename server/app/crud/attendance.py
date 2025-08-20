@@ -200,7 +200,7 @@ def checkOutAttendance(session: Session, intern_id: UUID):
 
     if time_out < intern_scheduled_time_out - timedelta(minutes=15):
         attendance.check_in = "Early Out"
-    elif time_out > intern_scheduled_time_out + timedelta(minutes=1):
+    elif time_out > intern_scheduled_time_out + timedelta(minutes=15):
         attendance.check_in = "Overtime"
     else:
         attendance.check_in = "Regular Hours"
