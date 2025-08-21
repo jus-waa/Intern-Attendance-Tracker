@@ -422,7 +422,7 @@ const Interns: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen px-4 relative">
+    <div className="flex flex-col items-center mt-12 px-4 relative">
       <div className="w-full max-w-6xl">
         {/*Header*/}
         <div className="text-center py-2">

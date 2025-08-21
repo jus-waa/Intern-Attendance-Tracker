@@ -288,8 +288,8 @@ const TimeTable = () => {
   };
 
   return (
-    <div className="min-h-screen">
-      <div className="flex flex-col">
+    <div className="mt-12">
+      <div className="flex flex-col justify-between">
         <div className="text-center mb-6">
           <p className="text-[#0D223D] text-4xl font-semibold mb-1">
             Attendance

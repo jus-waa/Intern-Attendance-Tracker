@@ -157,7 +157,7 @@ const InternHistoryPage: React.FC = () => {
   }; 
 
   return (
-    <div className="min-h-screen">
+    <div className="mt-12">
       {/* Main Content */}
       <div className="flex flex-col">
         {/* Header */}
