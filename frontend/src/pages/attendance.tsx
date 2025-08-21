@@ -88,6 +88,13 @@ const TimeTable = () => {
     try {
       setLoading(true);
       let response;
+      // Get current local date in YYYY-MM-DD
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+      const day = String(today.getDate()).padStart(2, '0');
+          
+      const dateToday = `${year}-${month}-${day}`;
       
       if (targetDate) {
         // Format date as YYYY-MM-DD for the API (avoid timezone issues)
@@ -96,13 +103,14 @@ const TimeTable = () => {
         const day = String(targetDate.getDate()).padStart(2, '0');
         const formattedDate = `${year}-${month}-${day}`;
         
+        
         console.log('Selected date:', targetDate);
         console.log('Formatted date for API:', formattedDate);
         
         response = await axios.get(`http://localhost:8000/attendance/timesheet/by-date?target_date=${formattedDate}`);
       } else {
         // Fetch all attendance data
-        response = await axios.get("http://localhost:8000/attendance/timesheet");
+        response = await axios.get(`http://localhost:8000/attendance/timesheet/by-date?target_date=${dateToday}`);
       }
       
       setAttendanceData(response.data.result);
