@@ -190,8 +190,12 @@ const Scan: React.FC = () => {
   };
 
   const handleScanError = (errorMessage: string) => {
-    console.warn("QR Scan Error (ignored):", errorMessage);
+    if (!errorMessage.includes("NotFoundException")) {
+      console.error("QR Scan Error:", errorMessage);
+    }
+    // else: silently ignore
   };
+
 
   const stopScanning = async () => {
     if (scannerRef.current && isScanning) {

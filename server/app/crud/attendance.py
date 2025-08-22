@@ -87,7 +87,6 @@ def getBySchool(session:Session, abbreviation: str, skip:int = 0, limit:int = 10
         "message": f"Intern from {abbreviation} fetched successfully.",
         "result": response
     }
-    
 def checkInAttendance(session:Session, intern_id:UUID):
     #validate if intern_id in attendance table is similar
     intern = session.query(Intern).filter(
@@ -96,54 +95,81 @@ def checkInAttendance(session:Session, intern_id:UUID):
     #check for check in
     if not intern:
         raise HTTPException(status_code=404, detail="Intern not found.")
-    #check for existing attendance
-    existing_attendance =  session.query(Attendance).filter(
-        Attendance.intern_id == intern_id,
-        Attendance.attendance_date == date.today()
-    ).first()
-    #err handling for dups
-    if existing_attendance:
-        raise HTTPException(status_code=400, detail="Attendance already exist for today.")
+    
     #check first if intern has a set time in 
     if not intern.time_in:
         raise HTTPException(status_code=400, detail="Intern has no scheduled time_in.")
+    
+    now = datetime.now()
+    today = now.date()
+    
+    # Determine the correct attendance date based on shift logic
+    shift_start = datetime.combine(today, intern.time_in)
+    shift_end = datetime.combine(today, intern.time_out)
+    
+    # Handle night shifts (time_out < time_in means shift crosses midnight)
+    if intern.time_out < intern.time_in:
+        shift_end += timedelta(days=1)
+        # If it's past midnight but before the next shift start, 
+        # this check-in belongs to yesterday's shift
+        if now < shift_start:
+            attendance_date = (today - timedelta(days=1))
+        else:
+            attendance_date = today
+    else:
+        attendance_date = today
+    
+    #check for existing attendance on the correct date
+    existing_attendance = session.query(Attendance).filter(
+        Attendance.intern_id == intern_id,
+        Attendance.attendance_date == attendance_date
+    ).first()
+    
+    #err handling for dups
+    if existing_attendance:
+        raise HTTPException(status_code=400, detail="Attendance already exist for this shift.")
+    
     #check_in logic
-    intern_time_in = datetime.combine(date.today(), datetime.now().time())
-    intern_time_out = datetime.combine(date.today(), datetime.now().time())
-    intern_scheduled_time_in = datetime.combine(date.today(), intern.time_in)
-    intern_scheduled_time_out = datetime.combine(date.today(), intern.time_out)
-    today = date.today()
+    intern_scheduled_time_in = datetime.combine(attendance_date, intern.time_in)
+    
+    # Handle night shift scheduled time calculation
+    if intern.time_out < intern.time_in and attendance_date != today:
+        # For night shifts that started yesterday, adjust the scheduled time
+        intern_scheduled_time_in = datetime.combine(attendance_date, intern.time_in)
+    
     #check for offset
     previous_absent = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.attendance_date < today,
-        Attendance.attendance_date >= today - timedelta(days=7),  # optionally only check last 7 days
+        Attendance.attendance_date < attendance_date,
+        Attendance.attendance_date >= attendance_date - timedelta(days=7),  # optionally only check last 7 days
         Attendance.check_in == "Absent"
     ).order_by(Attendance.attendance_date.desc()).first()
+    
     already_offset = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.attendance_date == today,
+        Attendance.attendance_date == attendance_date,
         Attendance.check_in == "Offset"
     ).first()
+    
     check_in = None
     if is_today_holiday():
         check_in = "Holiday"
-    elif today.weekday() in [5, 6] and previous_absent and not already_offset:
+    elif attendance_date.weekday() in [5, 6] and previous_absent and not already_offset:
         check_in = "Offset"
     else:
-        # No existing record, determine based on current time vs scheduled
-        if intern_time_in < intern_scheduled_time_in - timedelta(minutes=15):
+        # Determine based on current time vs scheduled
+        if now < intern_scheduled_time_in - timedelta(minutes=15):
             check_in = "Early In"
-        elif intern_time_in > intern_scheduled_time_in + timedelta(minutes=15):
+        elif now > intern_scheduled_time_in + timedelta(minutes=15):
             check_in = "Late"
         else:
             check_in = "Regular Hours"
 
-    #register time in
+    #register time in with correct attendance date
     _attendance = Attendance(
         intern_id=intern_id,
-        attendance_date=date.today(),
-        time_in=datetime.now(),
+        attendance_date=attendance_date,  # Use calculated attendance date
+        time_in=now,
         check_in=check_in,
         abbreviation=intern.abbreviation,
         intern_name=intern.intern_name
@@ -158,101 +184,143 @@ def checkInAttendance(session:Session, intern_id:UUID):
         "check_in": _attendance.check_in
     }
 
-def checkOutAttendance(session: Session, intern_id: UUID):
-    # Check today's attendance
-    attendance = session.query(Attendance).filter(
+def checkOutAttendance(session: Session, intern_id):
+    # Fetch intern
+    intern = session.query(Intern).filter(Intern.intern_id == intern_id).first()
+    if not intern:
+        raise HTTPException(status_code=404, detail="Intern not found.")
+    
+    now = datetime.now()
+    
+    # For night shifts, we need to find the attendance record that was created at check-in
+    # Check for today's attendance first
+    today_attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.attendance_date == date.today()
+        Attendance.attendance_date == now.date(),
+        Attendance.time_out.is_(None)  # Only unchecked-out records
     ).first()
     
-    if not attendance:
-        raise HTTPException(status_code=404, detail="No check-in found today.")
-
+    # If no today's attendance, check yesterday (for night shifts that started yesterday)
+    yesterday_attendance = None
+    if not today_attendance:
+        yesterday = now.date() - timedelta(days=1)
+        yesterday_attendance = session.query(Attendance).filter(
+            Attendance.intern_id == intern_id,
+            Attendance.attendance_date == yesterday,
+            Attendance.time_out.is_(None)  # Only unchecked-out records
+        ).first()
+    
+    # Determine which attendance record to use
+    attendance = today_attendance or yesterday_attendance
+    
+    if not attendance or not attendance.time_in:
+        raise HTTPException(status_code=404, detail="No active check-in found for this shift.")
+    
     if attendance.time_out:
-        raise HTTPException(status_code=400, detail="Already checked out today.")
-
+        raise HTTPException(status_code=400, detail="Already checked out for this shift.")
+    
+    # Calculate total hours using the original check-in time
     time_in_naive = attendance.time_in.replace(tzinfo=None) if attendance.time_in.tzinfo else attendance.time_in
-
-    # Register timeout
-    time_out = datetime.now()
-    total_hours = time_out - time_in_naive
-    attendance.time_out = time_out
-    attendance.total_hours = total_hours
+    attendance.time_out = now
+    attendance.total_hours = now - time_in_naive
     
-    session.commit()
-    session.refresh(attendance)
+    # --- OVERTIME / EARLY OUT LOGIC ---
+    # Determine the scheduled shift times based on the attendance date (when shift started)
+    shift_date = attendance.attendance_date
+    shift_start = datetime.combine(shift_date, intern.time_in)
+    shift_end = datetime.combine(shift_date, intern.time_out)
     
-    # Calculate remaining hours
-    intern = session.query(Intern).filter(
-        Intern.intern_id == intern_id   
-    ).first()
-    total_attended = session.query(func.sum(Attendance.total_hours)).filter(
-        Attendance.intern_id == intern_id
-    ).scalar() or 0
-    if intern.total_hours and total_attended:
-        remaining = intern.total_hours - total_attended
-        intern.time_remain = remaining
-    else:
-        intern.time_remain = intern.total_hours
-
-    # --- OVERTIME LOGIC ---
-    intern_scheduled_time_out = datetime.combine(date.today(), intern.time_out)
-
-    if time_out < intern_scheduled_time_out - timedelta(minutes=15):
+    # Handle night shift end time (crosses midnight)
+    if intern.time_out < intern.time_in:
+        shift_end += timedelta(days=1)
+    
+    # Check if early out or overtime
+    if now < shift_end - timedelta(minutes=15):
         attendance.check_in = "Early Out"
-    elif time_out > intern_scheduled_time_out + timedelta(minutes=15):
+    elif now > shift_end + timedelta(minutes=15):
         attendance.check_in = "Overtime"
     else:
         attendance.check_in = "Regular Hours"
-
-    session.commit()
-    session.refresh(attendance)
-
-    if not intern:
-        raise HTTPException(status_code=404, detail="Failed to check-out.")
     
-    # Mark as completed
+    # Update remaining hours
+    total_attended = session.query(func.sum(Attendance.total_hours)).filter(
+        Attendance.intern_id == intern_id
+    ).scalar() or timedelta(0)
+    
+    if intern.total_hours:
+        remaining = intern.total_hours - total_attended
+        intern.time_remain = remaining
+    else:
+        intern.time_remain = timedelta(0)
+    
+    # Update intern status if done
     if intern.time_remain <= timedelta(0) and intern.status != "Completed":
         intern.status = "Completed"
-        session.commit()
-        session.flush()
-        session.expire_all()
-
+    
+    session.commit()
+    session.refresh(attendance)
+    session.refresh(intern)
+    
+    # Auto-transfer to history if all interns from the school completed
     school_interns = session.query(Intern).filter(Intern.school_name == intern.school_name).all()
-    all_done = all(i.status in ["Completed", "Terminated"] for i in school_interns)
-
-    if all_done:
+    if all(i.status in ["Completed", "Terminated"] for i in school_interns):
         try:
             from app.crud.intern_history import transferSchoolToHistory
             transferSchoolToHistory(session, intern.school_name)
         except Exception as e:
             print(f"Auto-transfer failed for {intern.school_name}: {e}")
-
+    
     return {
         "message": "Checked out successfully.",
         "time_out": attendance.time_out,
         "hours_today": attendance.total_hours,
         "remaining_hours": intern.time_remain,
-        "remarks": attendance.remarks   
+        "remarks": attendance.check_in
     }
-
-
+    
 def registerAttendanceByQr(session: Session, intern_id: UUID):
-    #check todays attendance
-    attendance = session.query(Attendance).filter(
+    # Get intern details to check if it's a night shift
+    intern = session.query(Intern).filter(Intern.intern_id == intern_id).first()
+    if not intern:
+        raise HTTPException(status_code=404, detail="Intern not found.")
+    
+    now = datetime.now()
+    today = now.date()
+    
+    # For night shifts, we need to check both today and yesterday's attendance
+    # First check today's attendance
+    today_attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
-        Attendance.attendance_date == date.today()
+        Attendance.attendance_date == today,
+        Attendance.time_out.is_(None)  # Only unchecked-out records
     ).first()
     
+    # If no today's attendance, check yesterday (for night shifts that started yesterday)
+    yesterday_attendance = None
+    if not today_attendance:
+        yesterday = today - timedelta(days=1)
+        yesterday_attendance = session.query(Attendance).filter(
+            Attendance.intern_id == intern_id,
+            Attendance.attendance_date == yesterday,
+            Attendance.time_out.is_(None)  # Only unchecked-out records
+        ).first()
+    
+    # Determine which attendance record to use
+    attendance = today_attendance or yesterday_attendance
+    
+    # If no existing attendance record, this is a check-in
     if not attendance:
         return checkInAttendance(session, intern_id)
-        
+    
+    # If time_in is None (shouldn't happen but just in case)    
     if attendance.time_in is None:
         return checkInAttendance(session, intern_id)
     
+    # If already checked out
     if attendance.time_out:
-        raise HTTPException(status_code=400, detail="Already checked out today.")
-
+        raise HTTPException(status_code=400, detail="Already checked out for this shift.")
+    
+    # Otherwise, this is a check-out
     return checkOutAttendance(session, intern_id)
 
 def removeAttendance(session:Session, intern_id: int):

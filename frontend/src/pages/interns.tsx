@@ -294,9 +294,9 @@ const Interns: React.FC = () => {
   const getTimeInRange = () => {
     switch (formData.shift_name) {
       case "Day Shift":
-        return { min: "06:00", max: "09:00" };
+        return { min: "06:00", max: "10:00" };
       case "Mid Shift":
-        return { min: "10:00", max: "13:00" }; 
+        return { min: "10:00", max: "16:00" }; 
       case "Night Shift":
         return { min: "21:00", max: "24:00" }; 
       default:

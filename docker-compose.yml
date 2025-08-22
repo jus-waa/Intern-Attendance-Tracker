@@ -6,11 +6,15 @@ services:
       context: ./server
     container_name: fastapi_backend
     env_file:
-      - ./server/.env
+      - ./server/.env         # <-- backend uses .env
     ports:
       - "8000:8000"
     volumes:
       - ./server:/app
+      - qr_data:/app/qrcodes
+    depends_on:
+      - db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -24,3 +28,23 @@ services:
       - backend
     stdin_open: true
     tty: true
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host   # <-- expose to host
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    env_file:
+      - ./server/.env           # <-- DB reads the same .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  qr_data:

@@ -3,37 +3,46 @@ from sqlalchemy.orm import Session
 from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
 from app.utils.db import SessionLocal
+import pytz
 
+TIMEZONE = pytz.timezone("Asia/Manila")
+
+# ------------------------------
+# AUTO TIMEOUT
+# ------------------------------
 def auto_timeout():
     session: Session = SessionLocal()
     try:
-        now = datetime.now()
-        today = date.today()
-
-        # Get all interns to check their shift times
+        now = datetime.now(TIMEZONE)
         interns = session.query(Intern).all()
-
         auto_timeout_count = 0
 
         for intern in interns:
-            # Calculate the auto-timeout threshold (5 mins before next shift)
-            shift_start = datetime.combine(today, intern.time_in)
-            next_shift_start = shift_start + timedelta(days=1)  # next day shift
-            auto_timeout_threshold = next_shift_start - timedelta(minutes=5)
+            today = now.date()
+            shift_start = datetime.combine(today, intern.time_in, tzinfo=TIMEZONE)
+            shift_end = datetime.combine(today, intern.time_out, tzinfo=TIMEZONE)
 
-            # Find today's attendance record where time_out is still None
+            # Night shift → ends next day
+            if intern.time_out < intern.time_in:
+                shift_end += timedelta(days=1)
+                if now < shift_start:
+                    shift_start -= timedelta(days=1)
+
+            attendance_date = shift_start.date()
+
+            # Get the attendance for this shift
             attendance = session.query(Attendance).filter(
                 Attendance.intern_id == intern.intern_id,
-                Attendance.attendance_date == today,
+                Attendance.attendance_date == attendance_date,
                 Attendance.time_in.isnot(None),
                 Attendance.time_out.is_(None)
             ).first()
 
-            # Auto-timeout only if we're within the last 5 mins before next shift
-            if attendance and now >= auto_timeout_threshold:
-                attendance.time_out = now
-                attendance.total_hours = now - attendance.time_in
-                attendance.remarks = "Didn't Timeout"
+            # Auto-timeout at shift end
+            if attendance and now >= shift_end:
+                attendance.time_out = shift_end
+                attendance.total_hours = attendance.time_out - attendance.time_in
+                attendance.remarks = "Auto Timeout"
                 auto_timeout_count += 1
 
         session.commit()
@@ -41,6 +50,5 @@ def auto_timeout():
 
     except Exception as e:
         print(f"Error in auto_timeout: {e}")
-
     finally:
         session.close()

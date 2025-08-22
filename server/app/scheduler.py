@@ -1,26 +1,38 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.auto_timeout import auto_timeout
-from datetime import date
-import pytz
-
-from app.utils.db import SessionLocal
 from app.models.attendance_model import Attendance
 from app.models.intern_model import Intern
+from app.utils.db import SessionLocal
+import pytz
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
+TIMEZONE = pytz.timezone("Asia/Manila")
+
+# ------------------------------
+# MARK ABSENT
+# ------------------------------
 def mark_absent():
-    db: Session = SessionLocal()
+    session: Session = SessionLocal()
     try:
-        today = date.today()
-        interns = db.query(Intern).all()
+        now = datetime.now(TIMEZONE)
+        interns = session.query(Intern).all()
 
         for intern in interns:
-            attendance = db.query(Attendance).filter(
+            # Determine the shift start datetime
+            today = now.date()
+            shift_start = datetime.combine(today, intern.time_in, tzinfo=TIMEZONE)
+
+            # If night shift and current time before shift start, use yesterday
+            if intern.time_out < intern.time_in and now < shift_start:
+                shift_start -= timedelta(days=1)
+
+            attendance_date = shift_start.date()
+
+            # Check if attendance already exists
+            attendance = session.query(Attendance).filter(
                 Attendance.intern_id == intern.intern_id,
-                Attendance.attendance_date == today,
-                Attendance.abbreviation == intern.abbreviation,
-                Attendance.intern_name == intern.intern_name
+                Attendance.attendance_date == attendance_date
             ).first()
 
             if not attendance:
@@ -28,47 +40,72 @@ def mark_absent():
                     intern_id=intern.intern_id,
                     intern_name=intern.intern_name,
                     abbreviation=intern.abbreviation,
-                    attendance_date=today,
+                    attendance_date=attendance_date,
                     check_in="Absent"
                 )
-                db.add(new_attendance)
+                session.add(new_attendance)
 
-        db.commit()
-        print(f"[{today}] Absent check completed.")
+        session.commit()
+        print(f"[{now.date()}] Absent check completed.")
+
     except Exception as e:
-        print(f"Error marking absences: {e}")
+        print(f"Error in mark_absent: {e}")
     finally:
-        db.close()
-        
-def refresh_jobs(scheduler):
-    db: Session = SessionLocal()
+        session.close()
+
+
+# ------------------------------
+# AUTO TIMEOUT
+# ------------------------------
+def auto_timeout():
+    session: Session = SessionLocal()
     try:
-        interns = db.query(Intern).all()
+        now = datetime.now(TIMEZONE)
+        interns = session.query(Intern).all()
+        auto_timeout_count = 0
 
         for intern in interns:
-            absent_job_id = f"mark_absent_{intern.intern_id}"
-            timeout_job_id = f"auto_timeout_{intern.intern_id}"
+            today = now.date()
+            shift_start = datetime.combine(today, intern.time_in, tzinfo=TIMEZONE)
+            shift_end = datetime.combine(today, intern.time_out, tzinfo=TIMEZONE)
 
-            if not scheduler.get_job(absent_job_id):
-                scheduler.add_job(
-                    mark_absent,
-                    CronTrigger(hour=intern.time_in.hour, minute=intern.time_in.minute, timezone=pytz.timezone("Asia/Manila")),
-                    id=absent_job_id
-                )
+            # Night shift → ends next day
+            if intern.time_out < intern.time_in:
+                shift_end += timedelta(days=1)
+                if now < shift_start:
+                    shift_start -= timedelta(days=1)
 
-            if not scheduler.get_job(timeout_job_id):
-                scheduler.add_job(
-                    auto_timeout,
-                    CronTrigger(hour=intern.time_out.hour, minute=intern.time_out.minute, timezone=pytz.timezone("Asia/Manila")),
-                    id=timeout_job_id
-                )
+            attendance_date = shift_start.date()
 
+            # Get the attendance for this shift
+            attendance = session.query(Attendance).filter(
+                Attendance.intern_id == intern.intern_id,
+                Attendance.attendance_date == attendance_date,
+                Attendance.time_in.isnot(None),
+                Attendance.time_out.is_(None)
+            ).first()
+
+            # Auto-timeout at shift end
+            if attendance and now >= shift_end:
+                attendance.time_out = shift_end
+                attendance.total_hours = attendance.time_out - attendance.time_in
+                attendance.remarks = "Auto Timeout"
+                auto_timeout_count += 1
+
+        session.commit()
+        print(f"{auto_timeout_count} records auto-timed out.")
+
+    except Exception as e:
+        print(f"Error in auto_timeout: {e}")
     finally:
-        db.close()
-        
-def start_scheduler():
-    scheduler = BackgroundScheduler(timezone=pytz.timezone("Asia/Manila"))
+        session.close()
 
+
+# ------------------------------
+# SCHEDULER
+# ------------------------------
+def start_scheduler():
+    scheduler = BackgroundScheduler(timezone=TIMEZONE)
     db: Session = SessionLocal()
     try:
         interns = db.query(Intern).all()
@@ -80,26 +117,20 @@ def start_scheduler():
                 CronTrigger(
                     hour=intern.time_in.hour,
                     minute=intern.time_in.minute,
-                    timezone=pytz.timezone("Asia/Manila")
+                    timezone=TIMEZONE
                 ),
                 id=f"mark_absent_{intern.intern_id}"
             )
 
-            # Determine shift end (handle next-day shifts)
+            # Schedule auto_timeout at shift end
             shift_end_hour = intern.time_out.hour
             shift_end_minute = intern.time_out.minute
-            if intern.time_out < intern.time_in:
-                # Shift passes midnight → we’ll schedule next day
-                # APScheduler cron doesn't allow "next day" directly,
-                # but this works since time is still valid
-                pass
-
             scheduler.add_job(
                 auto_timeout,
                 CronTrigger(
                     hour=shift_end_hour,
                     minute=shift_end_minute,
-                    timezone=pytz.timezone("Asia/Manila")
+                    timezone=TIMEZONE
                 ),
                 id=f"auto_timeout_{intern.intern_id}"
             )
@@ -108,8 +139,3 @@ def start_scheduler():
         db.close()
 
     scheduler.start()
-    
-    refresh_jobs(scheduler)
-
-    # Refresh every 5 minutes for new interns
-    scheduler.add_job(lambda: refresh_jobs(scheduler), 'interval', minutes=5)
