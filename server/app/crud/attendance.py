@@ -207,6 +207,49 @@ def checkInAttendance(session: Session, intern_id: UUID):
         "check_in": _attendance.check_in  # Fixed: was attendance.check_in
     }
 
+def calculate_total_attended_hours(session: Session, intern_id: UUID) -> timedelta:
+    """
+    Calculate total attended hours for an intern from all completed attendance records.
+    """
+    completed_attendances = session.query(Attendance).filter(
+        Attendance.intern_id == intern_id,
+        Attendance.total_hours.is_not(None)
+    ).all()
+    
+    total_seconds = 0
+    for record in completed_attendances:
+        if record.total_hours:
+            if isinstance(record.total_hours, timedelta):
+                total_seconds += record.total_hours.total_seconds()
+            else:
+                # Handle other formats if needed
+                total_seconds += float(record.total_hours)
+    
+    return timedelta(seconds=total_seconds)
+
+def update_intern_remaining_hours(session: Session, intern_id: UUID):
+    """
+    Update the intern's remaining hours based on total attended hours.
+    """
+    intern = session.query(Intern).filter(Intern.intern_id == intern_id).first()
+    if not intern:
+        return False
+    
+    total_attended = calculate_total_attended_hours(session, intern_id)
+    
+    if intern.total_hours:
+        remaining = intern.total_hours - total_attended
+        intern.time_remain = remaining if remaining > timedelta(0) else timedelta(0)
+    else:
+        intern.time_remain = timedelta(0)
+    
+    # Update status if completed
+    if intern.time_remain <= timedelta(0) and intern.status != "Completed":
+        intern.status = "Completed"
+    
+    return True
+
+# Updated checkOutAttendance function using helper functions
 def checkOutAttendance(session: Session, intern_id):
     # Fetch intern
     intern = session.query(Intern).filter(Intern.intern_id == intern_id).first()
@@ -215,25 +258,22 @@ def checkOutAttendance(session: Session, intern_id):
     
     now = datetime.now()
     
-    # For night shifts, we need to find the attendance record that was created at check-in
-    # Check for today's attendance first
+    # Find the active attendance record (same logic as before)
     today_attendance = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
         Attendance.attendance_date == now.date(),
-        Attendance.time_out.is_(None)  # Only unchecked-out records
+        Attendance.time_out.is_(None)
     ).first()
     
-    # If no today's attendance, check yesterday (for night shifts that started yesterday)
     yesterday_attendance = None
     if not today_attendance:
         yesterday = now.date() - timedelta(days=1)
         yesterday_attendance = session.query(Attendance).filter(
             Attendance.intern_id == intern_id,
             Attendance.attendance_date == yesterday,
-            Attendance.time_out.is_(None)  # Only unchecked-out records
+            Attendance.time_out.is_(None)
         ).first()
     
-    # Determine which attendance record to use
     attendance = today_attendance or yesterday_attendance
     
     if not attendance or not attendance.time_in:
@@ -242,23 +282,19 @@ def checkOutAttendance(session: Session, intern_id):
     if attendance.time_out:
         raise HTTPException(status_code=400, detail="Already checked out for this shift.")
     
-    # Calculate total hours using the original check-in time
+    # Calculate total hours for this session
     time_in_naive = attendance.time_in.replace(tzinfo=None) if attendance.time_in.tzinfo else attendance.time_in
     attendance.time_out = now
     attendance.total_hours = now - time_in_naive
     
-    # --- OVERTIME / EARLY OUT LOGIC ---
-    # Determine the scheduled shift times based on the attendance date (when shift started)
+    # Handle overtime/early out logic (same as before)
     shift_date = attendance.attendance_date
     shift_start = datetime.combine(shift_date, intern.time_in)
     shift_end = datetime.combine(shift_date, intern.time_out)
     
-    # Handle night shift end time (crosses midnight)
     if intern.time_out < intern.time_in:
         shift_end += timedelta(days=1)
     
-    # --- OVERTIME / EARLY OUT LOGIC ---
-    # Only overwrite check_in status for regular hours, preserve Late/Early In status
     if attendance.check_in == "Regular Hours":
         if now < shift_end - timedelta(minutes=15):
             attendance.check_in = "Early Out"
@@ -267,34 +303,20 @@ def checkOutAttendance(session: Session, intern_id):
         else:
             attendance.check_in = "Regular Hours"
     elif attendance.check_in in ["Late", "Early In"]:
-        # For Late/Early In, only add overtime if they stayed past scheduled time
-        # but preserve the original Late/Early In status for regular checkout
         if now > shift_end + timedelta(minutes=15):
-            # If they were late/early in AND worked overtime, mark as overtime
             attendance.check_in = "Overtime"
-        # Otherwise, keep their original "Late" or "Early In" status
-    # For other statuses (Holiday, Offset, etc.), don't modify
-
-    # Update remaining hours
-    total_attended = session.query(func.sum(Attendance.total_hours)).filter(
-        Attendance.intern_id == intern_id
-    ).scalar() or timedelta(0)
     
-    if intern.total_hours:
-        remaining = intern.total_hours - total_attended
-        intern.time_remain = remaining
-    else:
-        intern.time_remain = timedelta(0)
-    
-    # Update intern status if done
-    if intern.time_remain <= timedelta(0) and intern.status != "Completed":
-        intern.status = "Completed"
-    
+    # Commit the attendance update first
     session.commit()
     session.refresh(attendance)
+    
+    # Update intern's remaining hours using helper function
+    update_intern_remaining_hours(session, intern_id)
+    
+    session.commit()
     session.refresh(intern)
     
-    # Auto-transfer to history if all interns from the school completed
+    # Auto-transfer logic (same as before)
     school_interns = session.query(Intern).filter(Intern.school_name == intern.school_name).all()
     if all(i.status in ["Completed", "Terminated"] for i in school_interns):
         try:
@@ -310,7 +332,7 @@ def checkOutAttendance(session: Session, intern_id):
         "remaining_hours": intern.time_remain,
         "remarks": attendance.check_in
     }
-    
+
 def registerAttendanceByQr(session: Session, intern_id: UUID):
     # Get intern details to check if it's a night shift
     intern = session.query(Intern).filter(Intern.intern_id == intern_id).first()
