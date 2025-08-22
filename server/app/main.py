@@ -9,7 +9,7 @@ from app.routes import intern_route, attendance_route
 from app.routes import intern_history_route
 import os
 
-#make folder for qrcodes
+#make folder for qrcodes    
 os.makedirs("qrcodes", exist_ok=True)
 
 intern_model.Base.metadata.create_all(bind=engine)
