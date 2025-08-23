@@ -155,7 +155,6 @@ const Interns: React.FC = () => {
       );
       setResponse(res.data.result);
       setAddInternModal(false);
-      //window.location.reload()
       await fetchInterns();
 
       // Reset form
@@ -172,6 +171,8 @@ const Interns: React.FC = () => {
         status: "Active",
       });
       setHoursInput("");
+      window.location.reload();
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed.");
