@@ -140,9 +140,18 @@ def checkInAttendance(session: Session, intern_id: UUID):
     if existing_attendance:
         raise HTTPException(status_code=400, detail="Attendance already exist for this shift.")
    
-    # Calculate the scheduled time_in for comparison
-    intern_scheduled_time_in = datetime.combine(attendance_date, intern.time_in)
-   
+    # Calculate the actual scheduled time_in for comparison
+    if is_night_shift:
+        if attendance_date == yesterday:
+            # This is for yesterday's night shift, so scheduled time was yesterday
+            intern_scheduled_time_in = datetime.combine(yesterday, intern.time_in)
+        else:
+            # This is for today's night shift
+            intern_scheduled_time_in = datetime.combine(today, intern.time_in)
+    else:
+        # Regular day shift - scheduled time is on the attendance date
+        intern_scheduled_time_in = datetime.combine(attendance_date, intern.time_in)   
+        
     # check for offset
     previous_absent = session.query(Attendance).filter(
         Attendance.intern_id == intern_id,
@@ -249,14 +258,22 @@ def checkOutAttendance(session: Session, intern_id):
         shift_end += timedelta(days=1)
     
     # --- OVERTIME / EARLY OUT LOGIC ---
-    if attendance.check_in == "Regular Hours":  # only overwrite if it was regular
+    # Only overwrite check_in status for regular hours, preserve Late/Early In status
+    if attendance.check_in == "Regular Hours":
         if now < shift_end - timedelta(minutes=15):
             attendance.check_in = "Early Out"
         elif now > shift_end + timedelta(minutes=15):
             attendance.check_in = "Overtime"
         else:
             attendance.check_in = "Regular Hours"
-
+    elif attendance.check_in in ["Late", "Early In"]:
+        # For Late/Early In, only add overtime if they stayed past scheduled time
+        # but preserve the original Late/Early In status for regular checkout
+        if now > shift_end + timedelta(minutes=15):
+            # If they were late/early in AND worked overtime, mark as overtime
+            attendance.check_in = "Overtime"
+        # Otherwise, keep their original "Late" or "Early In" status
+    # For other statuses (Holiday, Offset, etc.), don't modify
 
     # Update remaining hours
     total_attended = session.query(func.sum(Attendance.total_hours)).filter(
