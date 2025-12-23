@@ -8,9 +8,7 @@
 - DBeaver
   
 ### Clone and Run project
-```
-git clone <project-link>
-```
+git clone <project-link> <br>
 cd <project-name> <br>
 cd server <br>
 \venv\Scripts\activate.ps1 <br>
