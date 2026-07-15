@@ -1,5 +1,6 @@
 # Project Setup
 ### Install the following:
+- Node.js
 - Python
 - PostgreSQL
 - VSCode
@@ -7,13 +8,11 @@
 - DBeaver
   
 ### Clone and Run project
-```
-git clone <project-link>
-```
-cd <project-name>
-cd server
-\venv\Scripts\activate.ps1
-pip install -r requirements.txt
+git clone project-link <br>
+cd project-name <br>
+cd server <br>
+\venv\Scripts\activate.ps1 <br>
+pip install -r requirements.txt <br>
 uvicorn app.main:app --reload
 
 ### Setup Database
