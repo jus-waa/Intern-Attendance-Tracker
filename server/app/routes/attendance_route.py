@@ -37,13 +37,12 @@ async def registerAttendanceByQr(request:ReqInternID, session:Session=Depends(ge
 async def scanQRAttendance():
     pass
 
-@router.get("/timesheet/{school_name}")
-async def getAllBySchool(school_name:str, session:Session=Depends(get_db)):
-    _attendance = attendance.getBySchool(session, school_name, 0, 100)
-    _attendance = convert_total_hours(_attendance)
+@router.get("/timesheet")
+async def getAll(session:Session=Depends(get_db)):
+    _attendance = attendance.getAllAttendance(session, 0, 100)
     return ResAttendance(code="200",
                          status="Ok",
-                         message=f"Intern from {school_name} fetched successfully.",
+                         message=f"Attendance fetched successfully.",
                          result=_attendance
                          ).model_dump(exclude_none=True)
 
@@ -70,12 +69,12 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
         time_out_datetime = datetime.combine(date.today(), request.time_out)
         total_hours = time_out_datetime - existing_attendance.time_in
 
-        # Optional: also update the time_out in the DB (if desired)
+        # update timeout in db
         existing_attendance.time_out = request.time_out
 
     _attendance = attendance.updateAttendance(session,
                                             intern_id=request.intern_id,
-                                            check_in=request.check_in,
+                                            intern_name=request.intern_name,
                                             remarks=request.remarks,
                                             total_hours=total_hours
                                             )
@@ -86,7 +85,7 @@ async def update(request:ReqUpdateAttendance, session:Session=Depends(get_db)):
                          ).model_dump(exclude_none=True)
 
 @router.delete("/timesheet/delete")
-async def deleteById(request: AttendanceSchema, session: Session=Depends(get_db)):
+async def deleteById(request: ReqInternID, session: Session=Depends(get_db)):
     _attendance = attendance.removeAttendance(session, intern_id=request.intern_id)
     return ResAttendance(code="200",
                      status="Ok",
@@ -94,6 +93,15 @@ async def deleteById(request: AttendanceSchema, session: Session=Depends(get_db)
                      result=_attendance
                      ).model_dump(exclude_none=True)
 
+@router.get("/timesheet/by-date")
+async def getByDate(target_date: date, session: Session = Depends(get_db)):
+    _attendance = attendance.getAttendanceByDate(session, target_date)
+    return ResAttendance(
+        code="200",
+        status="Ok",
+        message=f"Attendance fetched successfully for {target_date}.",
+        result=_attendance
+    ).model_dump(exclude_none=True)
 
 
 

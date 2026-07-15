@@ -10,9 +10,8 @@ class Intern(Base):
     intern_id=Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4) 
     intern_name=Column(String(255), nullable=False)
     school_name=Column(String(255))
+    abbreviation=Column(String(255))
     shift_name=Column(String(255))
-    start_date=Column(Date)
-    end_date=Column(Date)
     time_in=Column(Time)
     time_out=Column(Time)
     total_hours=Column(Interval)
@@ -22,7 +21,7 @@ class Intern(Base):
     updated_at=Column(TIMESTAMP(timezone=True), server_default=text('now()')) 
 
     #defining relationship to attendance_model
-    attendances =  relationship("Attendance", back_populates="intern")
+    attendances =  relationship("Attendance", back_populates="intern", cascade="all, delete",passive_deletes=True)
 #used for debugging
 def __repr__(self):
     return f"<Intern(intern_id={self.intern.id}, intern_name={self.intern.name})>"

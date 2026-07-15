@@ -9,6 +9,8 @@ class AttendanceSchema(BaseModel):
     attendance_id: Optional[int] = None
     intern_id: UUID
     attendance_date: Optional[date] = None
+    intern_name: Optional[str]
+    abbreviation: Optional[str]
     time_in: Optional[time] = None
     time_out: Optional[time] = None
     total_hours: Optional[timedelta] = None
@@ -30,10 +32,10 @@ class ReqInternID(BaseModel):
 
 class ReqUpdateAttendance(BaseModel):
     intern_id: UUID
+    intern_name: str
     time_out: Optional[time] = None
-    check_in: str
-    remarks: str
-#response for any type of data
+    remarks: Optional[str] = None
+ #response for any type of data
 #similar to status.json in express
 class ResAttendance(BaseModel, Generic[T]):
     code: str
