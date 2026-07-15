@@ -1,9 +1,12 @@
 #db config for connecting to the database
+from dotenv import load_dotenv
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-DB_URL = 'postgresql+psycopg2://postgres:Cvsu101Internship@localhost:5432/attendance_db'
+load_dotenv()
+DB_URL=os.getenv("DB_URL")
 
 #sets the connection to the db
 engine = create_engine(DB_URL)

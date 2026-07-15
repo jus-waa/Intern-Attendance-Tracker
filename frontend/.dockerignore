@@ -1,0 +1,21 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# Build output
+dist
+build
+
+# Local environment variables
+.env
+*.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git
+.gitignore

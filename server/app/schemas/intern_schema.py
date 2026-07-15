@@ -1,5 +1,5 @@
 from typing import Optional, Generic, TypeVar
-from datetime import time, timedelta, datetime
+from datetime import time, timedelta, datetime, date
 from uuid import UUID
 from pydantic import BaseModel, Field
 
@@ -7,16 +7,15 @@ T = TypeVar('T')
 
 #Intern schema based on db
 class InternSchema(BaseModel):
-    intern_id: Optional[UUID] = None
-    intern_name: Optional[str] = None
-    school_name: Optional[str] = None
-    shift_name: Optional[str] = None
-    time_in: Optional[time] = None
-    time_out: Optional[time] = None
-    total_hours: Optional[timedelta] = None
+    intern_name: str
+    school_name: str
+    abbreviation: str
+    shift_name: str
+    time_in: time
+    time_out: time
+    total_hours: timedelta
     time_remain: Optional[timedelta] = None
-    status: Optional[str] = None
-    qr_code: Optional[str] = None
+    status: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     
@@ -25,7 +24,19 @@ class InternSchema(BaseModel):
 
 #used for inputting values
 class ReqIntern(BaseModel):
-    parameter: InternSchema = Field(...)
+    intern_id: UUID
+    intern_name: str
+    school_name: str
+    abbreviation: str
+    shift_name: str
+    time_in: time
+    time_out: time
+    total_hours: Optional[timedelta] = None
+    time_remain: Optional[timedelta] = None
+    status: str
+    
+class ReqInternID(BaseModel):
+    intern_id: UUID
     
 #response for any type of data
 #similar to status.json in express
